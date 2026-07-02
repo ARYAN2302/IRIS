@@ -1,0 +1,49 @@
+{
+  "committed_at": "COMMIT_BEFORE_TRAINING",
+  "description": "IRIS evaluation protocol - DO NOT MODIFY after training starts",
+
+  "primary_metric": {
+    "name": "k-NN accuracy on held-out types",
+    "k": [1, 5],
+    "description": "Pure zero-shot test. Extract embeddings for all samples. For each holdout sample, find k nearest neighbors among train+negatives. If majority of neighbors are drone types (not negative), count as correct detection. No fine-tuning, no linear head, no training of any kind.",
+    "success_threshold": "k-NN(k=1) accuracy > 70% on holdout types (drone vs background)",
+    "stretch_goal": "k-NN(k=1) accuracy > 85%"
+  },
+
+  "secondary_metric": {
+    "name": "Linear probe accuracy",
+    "description": "Train a single Linear(768, n_classes) layer on frozen encoder outputs from 30 train types + negatives. Test on 7 holdout types + negatives. This tests if the representation is linearly separable even when k-NN doesn't show it.",
+    "success_threshold": "Linear probe accuracy > 80% on holdout (drone vs background binary)",
+    "stretch_goal": "Linear probe accuracy > 90%"
+  },
+
+  "baseline_comparison": {
+    "name": "Supervised CNN baseline",
+    "description": "Train a CNN FROM SCRATCH with labels on the 30 train types + negatives. Same architecture as encoder. Test on 7 holdout types + negatives. This is the floor - if LeJEPA zero-shot beats this, something is wrong. If LeJEPA is within 10-15%, that's extremely strong.",
+    "expected": "Supervised should beat zero-shot by 10-30% (it has labels)",
+    "headline_result": "LeJEPA zero-shot within 15% of supervised baseline"
+  },
+
+  "tertiary_metrics": {
+    "umap_visualization": "2D UMAP of all embeddings. Color: train=blue, holdout=RED, negatives=gray. Success = holdout clusters with train, NOT with negatives.",
+    "centroid_distance": "For each holdout type, distance to nearest train drone centroid vs distance to background centroid. Success = d_drone < d_background for at least 5/7 holdout types.",
+    "silhouette_score": "Silhouette score for holdout samples when assigned to drone cluster vs background. Success = positive silhouette.",
+    "false_positive_rate": "FPR at 95% TPR. Target < 10%, stretch < 5%."
+  },
+
+  "integrity_rules": [
+    "Split committed to split.json BEFORE training. Never modified.",
+    "No hyperparameter tuning based on holdout performance.",
+    "Report FIRST run results, not best of many.",
+    "Per-sample normalization (no dataset-level stat leakage).",
+    "If multiple runs are done, report ALL runs (not cherry-picked)."
+  ],
+
+  "failure_protocol": {
+    "if_knn_below_50pct": "Model did not learn drone-ness. Try: more epochs, larger model, stronger augmentation, add projection head (already done).",
+    "if_knn_50_70pct": "Partial success. Model learned some drone-ness. Analyze WHICH holdout types fail - are they all one category? If yes, stratification issue. If random, augmentation issue.",
+    "if_knn_70_85pct": "Good result. Demo-worthy. Document and present.",
+    "if_knn_above_85pct": "Strong result. Consider: is this too good? Check for data leakage.",
+    "if_collapse_detected": "Stop immediately. Reduce lr 10x. Increase augmentation. Check data diversity. Resume from last good checkpoint."
+  }
+}

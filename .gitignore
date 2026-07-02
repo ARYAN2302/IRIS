@@ -1,0 +1,15 @@
+.DS_Store
+.ipynb_checkpoints/
+__pycache__/
+*.py[cod]
+
+venv/
+
+data/*
+!data/manifests/
+!data/manifests/**
+
+checkpoints_test/
+eval_results/
+iris_output/
+blog_images/
