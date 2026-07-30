@@ -1,0 +1,80 @@
+{
+  "timestamp": "2026-07-30 19:40:49 UTC",
+  "model": "IRIS v11",
+  "n_drone_samples": 50,
+  "n_matched_bg_samples": 50,
+  "n_real_negatives": 50,
+  "drone_types_tested": [
+    "DJI FPV COMBO",
+    "FUTABA-T10J",
+    "FUTABA-T14SG",
+    "JR PROPO XG7",
+    "JUMPER-T14",
+    "RadioMaster BOXER",
+    "WFLY ET10"
+  ],
+  "threshold": 11.09809962497289,
+  "baseline": {
+    "drone_tpr": 0.62,
+    "matched_bg_fpr": 0.0,
+    "real_rf_fpr": 0.0,
+    "auc_vs_matched": 1.0,
+    "auc_vs_real_rf": 1.0,
+    "drone_mean_dist": 10.447475963357203,
+    "bg_mean_dist": 19.734530968499325,
+    "real_neg_mean_dist": 20.466506910557673
+  },
+  "noise_injection": {
+    "20": {
+      "drone_tpr": 0.62,
+      "matched_bg_fpr": 0.0,
+      "real_rf_fpr": 0.0,
+      "auc_vs_matched": 1.0,
+      "auc_vs_real_rf": 1.0,
+      "drone_mean_dist": 10.464247253090534,
+      "bg_mean_dist": 19.75600541202896
+    },
+    "10": {
+      "drone_tpr": 0.68,
+      "matched_bg_fpr": 0.0,
+      "real_rf_fpr": 0.0,
+      "auc_vs_matched": 1.0,
+      "auc_vs_real_rf": 1.0,
+      "drone_mean_dist": 10.278150042988319,
+      "bg_mean_dist": 19.849613856103446
+    },
+    "5": {
+      "drone_tpr": 0.64,
+      "matched_bg_fpr": 0.0,
+      "real_rf_fpr": 0.0,
+      "auc_vs_matched": 0.996,
+      "auc_vs_real_rf": 1.0,
+      "drone_mean_dist": 10.854594914916943,
+      "bg_mean_dist": 20.242043613071356
+    },
+    "0": {
+      "drone_tpr": 0.22,
+      "matched_bg_fpr": 0.0,
+      "real_rf_fpr": 0.0,
+      "auc_vs_matched": 0.9724,
+      "auc_vs_real_rf": 0.8908,
+      "drone_mean_dist": 15.06996483676289,
+      "bg_mean_dist": 21.443975153573145
+    },
+    "-5": {
+      "drone_tpr": 0.0,
+      "matched_bg_fpr": 0.0,
+      "real_rf_fpr": 0.0,
+      "auc_vs_matched": 0.8364,
+      "auc_vs_real_rf": 0.8560000000000001,
+      "drone_mean_dist": 15.781609452312098,
+      "bg_mean_dist": 17.021873364296095
+    }
+  },
+  "noise_types": [
+    "AWGN",
+    "WiFi-like OFDM",
+    "Bluetooth-like FHSS",
+    "Microwave-like hum"
+  ]
+}
