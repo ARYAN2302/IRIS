@@ -1,0 +1,37 @@
+# IRIS Demo — Python dependencies for M1 Mac
+# Install: pip install -r requirements_demo.txt
+
+# Core ML
+torch==2.5.1
+numpy==1.26.4
+scipy==1.14.1
+
+# ONNX export + fast M1 inference (CoreML EP)
+onnx==1.17.0
+onnxruntime==1.20.1
+# For M1 Mac, onnxruntime includes CoreML Execution Provider automatically
+# If you want explicit CoreML: pip install onnxruntime-coreml (may conflict — usually not needed)
+
+# Visualization
+matplotlib==3.9.3
+
+# HDF5 (for data loading if using HDF5 mode)
+h5py==3.12.1
+
+# Modal (for pulling checkpoint from cloud storage)
+modal==0.67.44
+
+# Remote ID decoder (Build 4)
+# Installed separately when we get to that build:
+# pip install opendroneid
+
+# LLM briefing (Build 10+ — not needed for Phase 1)
+# ollama
+# chromadb
+
+# UMAP visualization (optional, for nice cluster plots)
+umap-learn==0.5.7
+scikit-learn==1.6.1
+
+# CLI progress bars
+tqdm==4.67.1
