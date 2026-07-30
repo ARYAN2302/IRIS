@@ -139,13 +139,21 @@ INTENT_CLASSES = ["SURVEILLANCE", "TRANSIT", "ATTACK"]
 
 
 def heuristic_intent_label(spec: np.ndarray) -> int:
-    """Generate heuristic intent label from spectrogram features."""
+    """Generate heuristic intent label from spectrogram features.
+
+    Activity score for per-channel-normalized spectrograms typically
+    ranges 1.2-1.8 with mean ~1.6. Thresholds calibrated from RFUAV:
+      < 1.55  → SURVEILLANCE (low activity — hovering/loitering)
+      > 1.70  → ATTACK        (high activity — diving/maneuvering)
+      middle  → TRANSIT       (steady cruise)
+    """
     s = spec[0] if spec.ndim == 3 else spec
-    temporal_var = s.var(axis=1).mean()
-    doppler_spread = s.std(axis=0).mean()
-    if temporal_var < 0.5 and doppler_spread < 1.0:
+    temporal_var = float(s.var(axis=1).mean())
+    doppler_spread = float(s.std(axis=0).mean())
+    activity = temporal_var + doppler_spread
+    if activity < 1.55:
         return 0  # SURVEILLANCE
-    elif temporal_var > 2.0 or doppler_spread > 3.0:
+    elif activity > 1.70:
         return 2  # ATTACK
     else:
         return 1  # TRANSIT

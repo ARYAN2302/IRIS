@@ -1,0 +1,30 @@
+{
+  "timestamp": "2026-07-30 20:11:08 UTC",
+  "phases_run": [
+    "intent"
+  ],
+  "results": {
+    "intent": {
+      "accuracy": 0.668571412563324,
+      "confusion_matrix": [
+        [
+          88,
+          32,
+          13
+        ],
+        [
+          24,
+          77,
+          42
+        ],
+        [
+          0,
+          5,
+          69
+        ]
+      ],
+      "status": "PASS"
+    }
+  },
+  "overall_pass": true
+}

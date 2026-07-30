@@ -311,14 +311,45 @@ def encode_batch(encoder: nn.Module, specs: np.ndarray, device: str, batch_size:
 
 
 def heuristic_intent_label(spec: np.ndarray) -> int:
+    """Generate heuristic intent label from spectrogram features.
+
+    Activity score for per-channel-normalized spectrograms typically
+    ranges 1.2-1.8 with mean ~1.6. Thresholds calibrated from RFUAV:
+      < 1.55  → SURVEILLANCE (low activity — hovering/loitering)
+      > 1.70  → ATTACK        (high activity — diving/maneuvering)
+      middle  → TRANSIT       (steady cruise)
+    """
     s = spec[0] if spec.ndim == 3 else spec
-    temporal_var = s.var(axis=1).mean()
-    doppler_spread = s.std(axis=0).mean()
-    if temporal_var < 0.5 and doppler_spread < 1.0:
-        return 0
-    elif temporal_var > 2.0 or doppler_spread > 3.0:
-        return 2
-    return 1
+    temporal_var = float(s.var(axis=1).mean())
+    doppler_spread = float(s.std(axis=0).mean())
+    activity = temporal_var + doppler_spread
+    if activity < 1.55:
+        return 0  # SURVEILLANCE
+    elif activity > 1.70:
+        return 2  # ATTACK
+    return 1  # TRANSIT
+
+
+def _diagnose_activity(specs: np.ndarray) -> dict:
+    """Print activity score distribution for diagnostic purposes."""
+    scores = []
+    for s in specs:
+        ch = s[0] if s.ndim == 3 else s
+        tv = float(ch.var(axis=1).mean())
+        ds = float(ch.std(axis=0).mean())
+        scores.append(tv + ds)
+    scores = np.array(scores)
+    return {
+        "min": float(scores.min()),
+        "max": float(scores.max()),
+        "mean": float(scores.mean()),
+        "std": float(scores.std()),
+        "p10": float(np.percentile(scores, 10)),
+        "p30": float(np.percentile(scores, 30)),
+        "p50": float(np.percentile(scores, 50)),
+        "p70": float(np.percentile(scores, 70)),
+        "p90": float(np.percentile(scores, 90)),
+    }
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -488,6 +519,14 @@ def test_intent_training(encoder: nn.Module, device: str) -> Dict:
 
     # Generate heuristic labels
     print("  [2] Generating heuristic intent labels...")
+
+    # Diagnostic: print activity score distribution
+    diag = _diagnose_activity(train_specs)
+    print(f"      train activity score: min={diag['min']:.3f}, max={diag['max']:.3f}, "
+          f"mean={diag['mean']:.3f}, std={diag['std']:.3f}")
+    print(f"      percentiles: p10={diag['p10']:.3f}, p30={diag['p30']:.3f}, "
+          f"p50={diag['p50']:.3f}, p70={diag['p70']:.3f}, p90={diag['p90']:.3f}")
+
     train_labels = np.array([heuristic_intent_label(s) for s in train_specs])
     holdout_labels = np.array([heuristic_intent_label(s) for s in holdout_specs])
 
@@ -561,7 +600,7 @@ def test_intent_training(encoder: nn.Module, device: str) -> Dict:
     with torch.no_grad():
         logits = intent_head(holdout_embs_t)
         preds = logits.argmax(dim=1).cpu().numpy()
-        true = holdout_labels.cpu().numpy()
+        true = holdout_labels  # already numpy
 
     cm = confusion_matrix(true, preds, labels=[0, 1, 2])
     print(f"\n  [5] Final accuracy: {best_acc:.4f}")
