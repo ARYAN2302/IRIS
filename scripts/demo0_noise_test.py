@@ -258,50 +258,88 @@ def load_drone_samples(h5_path: str, split: str, n_samples: int = 50, seed: int 
 
 
 def load_real_negatives(h5_path: str, n_samples: int = 50, seed: int = 123) -> np.ndarray:
-    """Load real RF noise samples (WiFi/BT/environmental) from /negatives/."""
+    """Load real RF noise samples (WiFi/BT/environmental) from /negatives/.
+
+    FIXED: Randomly sample source keys first, then load only those —
+    avoids iterating all 122,000 sources.
+    """
     print(f"  [info] loading {n_samples} real RF negatives (WiFi/BT/env)...")
+    rng = np.random.default_rng(seed)
+
     with h5py.File(h5_path, "r") as f:
         if "negatives" not in f:
             raise ValueError("No 'negatives' group in HDF5. Run ingest_dronerf_bg.py first.")
         neg_grp = f["negatives"]
 
-        # Collect all samples across all sources
-        all_samples = []
-        sources = list(neg_grp.keys())
-        print(f"  [info] found {len(sources)} negative sources: {sources[:5]}...")
-
+        # Case 1: negatives is a single dataset
         if isinstance(neg_grp, h5py.Dataset):
-            # Single dataset
             n_total = neg_grp.shape[0]
-            rng = np.random.default_rng(seed)
             indices = rng.choice(n_total, min(n_samples, n_total), replace=False)
-            for i in indices:
-                all_samples.append(_normalize_per_channel(_prep_sample(neg_grp[i])))
-        else:
-            # Group of datasets
-            for source in sources:
-                src_item = neg_grp[source]
-                if isinstance(src_item, h5py.Dataset) and len(src_item.shape) >= 3:
-                    n = src_item.shape[0] if len(src_item.shape) == 4 else 1
-                    for i in range(n):
-                        if len(src_item.shape) == 4:
-                            all_samples.append(_normalize_per_channel(_prep_sample(src_item[i])))
-                        else:
-                            all_samples.append(_normalize_per_channel(_prep_sample(src_item[:])))
+            samples = [_normalize_per_channel(_prep_sample(neg_grp[int(i)])) for i in indices]
+            print(f"  [ok] loaded {len(samples)} real RF negatives (single dataset)")
+            return np.stack(samples)
+
+        # Case 2: negatives is a group of datasets — sample keys first
+        all_keys = list(neg_grp.keys())
+        print(f"  [info] found {len(all_keys)} negative sources, sampling {n_samples} randomly...")
+
+        # Pick n_samples random keys (with replacement if not enough)
+        n_to_pick = min(n_samples, len(all_keys))
+        picked_keys = rng.choice(all_keys, n_to_pick, replace=False)
+
+        samples = []
+        for key in picked_keys:
+            try:
+                src_item = neg_grp[str(key)]
+                if isinstance(src_item, h5py.Dataset):
+                    if len(src_item.shape) == 4:
+                        # (N, C, H, W) — take first sample
+                        sample = src_item[0]
+                    elif len(src_item.shape) == 3:
+                        # (C, H, W) — single sample
+                        sample = src_item[:]
+                    else:
+                        continue
+                    samples.append(_normalize_per_channel(_prep_sample(sample)))
                 elif isinstance(src_item, h5py.Group):
-                    sub_keys = list(src_item.keys())
-                    for sk in sub_keys:
-                        if isinstance(src_item[sk], h5py.Dataset) and len(src_item[sk].shape) == 3:
-                            all_samples.append(_normalize_per_channel(_prep_sample(src_item[sk][:])))
+                    # Pick a random sub-key
+                    sub_keys = [sk for sk in src_item.keys()
+                                if isinstance(src_item[sk], h5py.Dataset) and len(src_item[sk].shape) == 3]
+                    if sub_keys:
+                        sk = rng.choice(sub_keys)
+                        sample = src_item[str(sk)][:]
+                        samples.append(_normalize_per_channel(_prep_sample(sample)))
+            except Exception as e:
+                # Skip problematic keys
+                continue
 
-        all_samples = np.stack(all_samples)
-        rng = np.random.default_rng(seed)
-        if len(all_samples) > n_samples:
-            idx = rng.choice(len(all_samples), n_samples, replace=False)
-            all_samples = all_samples[idx]
+        # If we didn't get enough, pick more
+        attempts = 0
+        while len(samples) < n_samples and attempts < 5:
+            attempts += 1
+            extra_keys = rng.choice(all_keys, min(n_samples - len(samples), len(all_keys)), replace=False)
+            for key in extra_keys:
+                if len(samples) >= n_samples:
+                    break
+                try:
+                    src_item = neg_grp[str(key)]
+                    if isinstance(src_item, h5py.Dataset):
+                        if len(src_item.shape) == 4:
+                            sample = src_item[0]
+                        elif len(src_item.shape) == 3:
+                            sample = src_item[:]
+                        else:
+                            continue
+                        samples.append(_normalize_per_channel(_prep_sample(sample)))
+                except Exception:
+                    continue
 
-    print(f"  [ok] loaded {len(all_samples)} real RF negatives")
-    return all_samples
+    if len(samples) == 0:
+        raise ValueError("Could not load any real RF negatives from HDF5")
+
+    result = np.stack(samples[:n_samples])
+    print(f"  [ok] loaded {len(result)} real RF negatives")
+    return result
 
 
 def load_matched_bgs(matched_path: str, n_samples: int = 50, seed: int = 456) -> np.ndarray:
