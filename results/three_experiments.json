@@ -1,0 +1,215 @@
+{
+  "experiment_1_dji_vs_nondji": {
+    "description": "Fit Mahalanobis on 26 non-DJI train types, test zero-shot on 5 DJI types",
+    "nondji_train_types": 26,
+    "dji_types_tested": [
+      "DJI AVATA2",
+      "DJI MAVIC3 PRO",
+      "DJI MINI3",
+      "DJI MINI4 PRO",
+      "DJI FPV COMBO"
+    ],
+    "auc_dji_vs_bg": 0.77749,
+    "auc_nondji_holdout_vs_bg": 1.0,
+    "per_type_dji_auc": {
+      "DJI AVATA2": 1.0,
+      "DJI MAVIC3 PRO": 0.40255,
+      "DJI MINI3": 1.0,
+      "DJI MINI4 PRO": 1.0,
+      "DJI FPV COMBO": 0.4849
+    },
+    "verdict": "PARTIAL \u2014 some DJI generalization"
+  },
+  "experiment_2_avr_cl": {
+    "description": "Sequential enrollment of 7 holdout types, naive vs AVR-CL",
+    "holdout_types": [
+      "DJI FPV COMBO",
+      "FUTABA-T10J",
+      "FUTABA-T14SG",
+      "JR PROPO XG7",
+      "JUMPER-T14",
+      "RadioMaster BOXER",
+      "WFLY ET10"
+    ],
+    "naive_history": [
+      {
+        "enrolled_type": "DJI FPV COMBO",
+        "n_enrolled": 1,
+        "overall_accuracy": 1.0,
+        "per_type": {
+          "DJI FPV COMBO": 1.0
+        }
+      },
+      {
+        "enrolled_type": "FUTABA-T10J",
+        "n_enrolled": 2,
+        "overall_accuracy": 0.25,
+        "per_type": {
+          "DJI FPV COMBO": 0.08,
+          "FUTABA-T10J": 0.42
+        }
+      },
+      {
+        "enrolled_type": "FUTABA-T14SG",
+        "n_enrolled": 3,
+        "overall_accuracy": 0.20666666666666667,
+        "per_type": {
+          "DJI FPV COMBO": 0.0,
+          "FUTABA-T10J": 0.2,
+          "FUTABA-T14SG": 0.42
+        }
+      },
+      {
+        "enrolled_type": "JR PROPO XG7",
+        "n_enrolled": 4,
+        "overall_accuracy": 0.12,
+        "per_type": {
+          "DJI FPV COMBO": 0.0,
+          "FUTABA-T10J": 0.04,
+          "FUTABA-T14SG": 0.18,
+          "JR PROPO XG7": 0.26
+        }
+      },
+      {
+        "enrolled_type": "JUMPER-T14",
+        "n_enrolled": 5,
+        "overall_accuracy": 0.256,
+        "per_type": {
+          "DJI FPV COMBO": 0.74,
+          "FUTABA-T10J": 0.12,
+          "FUTABA-T14SG": 0.28,
+          "JR PROPO XG7": 0.02,
+          "JUMPER-T14": 0.12
+        }
+      },
+      {
+        "enrolled_type": "RadioMaster BOXER",
+        "n_enrolled": 6,
+        "overall_accuracy": 0.08,
+        "per_type": {
+          "DJI FPV COMBO": 0.28,
+          "FUTABA-T10J": 0.02,
+          "FUTABA-T14SG": 0.04,
+          "JR PROPO XG7": 0.0,
+          "JUMPER-T14": 0.0,
+          "RadioMaster BOXER": 0.14
+        }
+      },
+      {
+        "enrolled_type": "WFLY ET10",
+        "n_enrolled": 7,
+        "overall_accuracy": 0.03142857142857143,
+        "per_type": {
+          "DJI FPV COMBO": 0.0,
+          "FUTABA-T10J": 0.0,
+          "FUTABA-T14SG": 0.04,
+          "JR PROPO XG7": 0.0,
+          "JUMPER-T14": 0.0,
+          "RadioMaster BOXER": 0.0,
+          "WFLY ET10": 0.18
+        }
+      }
+    ],
+    "avr_history": [
+      {
+        "enrolled_type": "DJI FPV COMBO",
+        "n_enrolled": 1,
+        "overall_accuracy": 1.0,
+        "per_type": {
+          "DJI FPV COMBO": 1.0
+        },
+        "repairs": 0
+      },
+      {
+        "enrolled_type": "FUTABA-T10J",
+        "n_enrolled": 2,
+        "overall_accuracy": 0.75,
+        "per_type": {
+          "DJI FPV COMBO": 1.0,
+          "FUTABA-T10J": 0.5
+        },
+        "repairs": 1
+      },
+      {
+        "enrolled_type": "FUTABA-T14SG",
+        "n_enrolled": 3,
+        "overall_accuracy": 0.7266666666666667,
+        "per_type": {
+          "DJI FPV COMBO": 1.0,
+          "FUTABA-T10J": 0.78,
+          "FUTABA-T14SG": 0.4
+        },
+        "repairs": 1
+      },
+      {
+        "enrolled_type": "JR PROPO XG7",
+        "n_enrolled": 4,
+        "overall_accuracy": 0.695,
+        "per_type": {
+          "DJI FPV COMBO": 1.0,
+          "FUTABA-T10J": 0.64,
+          "FUTABA-T14SG": 0.92,
+          "JR PROPO XG7": 0.22
+        },
+        "repairs": 5
+      },
+      {
+        "enrolled_type": "JUMPER-T14",
+        "n_enrolled": 5,
+        "overall_accuracy": 0.724,
+        "per_type": {
+          "DJI FPV COMBO": 1.0,
+          "FUTABA-T10J": 0.66,
+          "FUTABA-T14SG": 0.92,
+          "JR PROPO XG7": 0.9,
+          "JUMPER-T14": 0.14
+        },
+        "repairs": 5
+      },
+      {
+        "enrolled_type": "RadioMaster BOXER",
+        "n_enrolled": 6,
+        "overall_accuracy": 0.65,
+        "per_type": {
+          "DJI FPV COMBO": 1.0,
+          "FUTABA-T10J": 0.56,
+          "FUTABA-T14SG": 0.84,
+          "JR PROPO XG7": 0.98,
+          "JUMPER-T14": 0.28,
+          "RadioMaster BOXER": 0.24
+        },
+        "repairs": 5
+      },
+      {
+        "enrolled_type": "WFLY ET10",
+        "n_enrolled": 7,
+        "overall_accuracy": 0.7714285714285715,
+        "per_type": {
+          "DJI FPV COMBO": 1.0,
+          "FUTABA-T10J": 0.36,
+          "FUTABA-T14SG": 0.82,
+          "JR PROPO XG7": 0.98,
+          "JUMPER-T14": 0.76,
+          "RadioMaster BOXER": 0.88,
+          "WFLY ET10": 0.6
+        },
+        "repairs": 5
+      }
+    ],
+    "naive_final_accuracy": 0.03142857142857143,
+    "avr_final_accuracy": 0.7714285714285715,
+    "total_repairs": 22
+  },
+  "experiment_3_dronerf_check": {
+    "description": "Scan DroneRF negatives for mislabeled drone captures",
+    "n_negatives_tested": 200,
+    "n_detected_as_drones": 0,
+    "pct_detected": 0.0,
+    "neg_distance_min": 18.85759297713871,
+    "neg_distance_mean": 19.25980789398701,
+    "neg_distance_max": 19.38649504819573,
+    "threshold": 11.1514039792521,
+    "verdict": "Negatives are genuine background"
+  },
+  "timestamp": "2026-07-31 07:22:56 UTC"
+}
