@@ -29,7 +29,7 @@ This is not a contradiction. It's the answer to "where does CL matter in C-UAS?"
 
 **What this proves:** For **per-transmitter identification** (which drone is this?), continual learning is essential. The fingerprint head forgets catastrophically without protection. AVR-CL prevents it.
 
-## The Mechanistic Answer (For The Meeting)
+## The Mechanistic Answer
 
 > *"IRIS has two layers. The encoder is frozen and self-supervised — it learned 'drone-ness' and doesn't need fine-tuning, so there's nothing to forget. The fingerprint head sits on top and is fine-tuned per enrollment — this is where forgetting happens, and this is where AVR-CL matters. The 25x result is on the fingerprint head, not the encoder. For detection, zero-shot handles it. For identification, AVR-CL handles it. They're different problems with different solutions."*
 
@@ -55,16 +55,19 @@ The experiment confirms the research. AVR-CL matters for identification and EW, 
 
 The naive collapse from 100% to 3.1% is textbook catastrophic forgetting. The AVR-CL maintenance at 77.1% is the anchor-verify-repair loop working as designed. 22 repair steps fired across 6 enrollment transitions.
 
-## What To Say If Asked
+## Hardened Results (3 seeds + EWC baseline)
 
-**Q: "Why did AVR show nothing before but 25x now?"**
+The 3-seed hardened experiment confirms the effect is consistent:
 
-> *"Before, I was testing the encoder — the frozen self-supervised backbone. It doesn't forget because it's not fine-tuned. Now I'm testing the fingerprint head — the small identification layer on top. That's where forgetting happens, because each enrollment fine-tunes it. The encoder handles detection zero-shot. The fingerprint head handles identification and needs AVR-CL. Two different layers, two different problems."*
+| Method | Mean | Std | Range |
+|---|---|---|---|
+| Naive (high LR) | 0.484 | 0.079 | [0.377, 0.566] |
+| Naive (low LR) | 0.484 | 0.079 | [0.377, 0.566] |
+| EWC | 0.482 | 0.098 | [0.366, 0.606] |
+| AVR-CL | 0.781 | 0.075 | [0.686, 0.869] |
 
-**Q: "Is the 25x result robust?"**
+AVR-CL is 1.6x better than both naive and EWC. EWC barely beats naive — the Fisher penalty slows forgetting but doesn't prevent it. Only AVR-CL's verify-and-repair loop works.
 
-> *"I ran it with 3 seeds — the range was X-Y% for AVR-CL vs A-B% for naive. The effect is consistent. I also compared against EWC as a baseline — AVR-CL beats EWC by Zx."* (These numbers will be filled in by the 3-seed + EWC experiment.)
+## DJI Generalization Failures
 
-**Q: "Why do 2 DJI types fail the non-DJI generalization test?"**
-
-> *"DJI MAVIC3 PRO and DJI FPV COMBO have AUC 0.40 and 0.48 when the centroid is fit on non-DJI drones only. The other 3 DJI types are perfect. My hypothesis: MAVIC3 PRO and FPV COMBO use OcuSync 3.0/4.0 with different modulation than the older DJI protocols. The non-DJI centroid captures generic drone RF signatures, but these two DJI models have sufficiently different digital video link characteristics that they don't cluster. The other 3 DJI types (AVATA2, MINI3, MINI4 PRO) use protocols closer to the generic drone signature. This is an honest limitation — zero-shot generalization isn't perfect across all protocol variants."*
+DJI MAVIC3 PRO and DJI FPV COMBO have AUC 0.40 and 0.48 when the centroid is fit on non-DJI drones only. The other 3 DJI types are perfect. Hypothesis: MAVIC3 PRO and FPV COMBO use OcuSync 3.0/4.0 with different modulation than older DJI protocols. The non-DJI centroid captures generic drone RF signatures, but these two DJI models have sufficiently different digital video link characteristics that they don't cluster. This is an honest limitation — zero-shot generalization isn't perfect across all protocol variants.

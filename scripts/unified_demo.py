@@ -2,10 +2,9 @@
 """
 IRIS Unified Demo — One Script That Shows Everything
 
-This is the meeting-day master demo. Run it, and it walks through every
-IRIS capability in sequence with live visualizations:
+Walks through every IRIS capability in sequence with all numbers:
 
-  1. Detection — live waterfall + Mahalanobis distance
+  1. Detection — zero-shot AUC, noise robustness
   2. Intent — classify surveillance/transit/attack on detected drones
   3. Spoof — authenticate Remote ID via RF fingerprint
   4. AVR-CL — show forgetting prevention across enrollments
@@ -13,6 +12,7 @@ IRIS capability in sequence with live visualizations:
 
 Usage:
     python scripts/unified_demo.py
+    python scripts/unified_demo.py --no-pause  (non-interactive)
 """
 
 from __future__ import annotations
@@ -113,9 +113,6 @@ def demo_intent(results, pause=print):
     t4 = results.get("t4_pipeline_test", {})
     intent = t4.get("results", {}).get("intent", {})
 
-    print("  Armory's October 2025 blog says:")
-    print('    "It needs to detect intent, not just ID."')
-    print()
     print("  No published paper does RF-only intent inference.")
     print("  SOTA is CPhy-ML (Nature 2024) — uses control physics, not RF.")
     print("  IRIS does it from RF alone.")
@@ -157,10 +154,6 @@ def demo_spoof(results, pause=print):
     t4 = results.get("t4_pipeline_test", {})
     spoof = t4.get("results", {}).get("spoof", {})
 
-    print("  Armory's October 2025 blog says:")
-    print('    "DroneIDs could be conveniently falsified."')
-    print('    "Attackers can flood systems with fake dots."')
-    print()
     print("  No published work uses RF fingerprinting to authenticate Remote ID.")
     print("  IRIS does it — checks the transmitter's physical RF fingerprint")
     print("  against the claimed Remote ID.")
@@ -192,8 +185,8 @@ def demo_avr_cl(results, pause=print):
     hardened = results.get("avr_cl_hardened", {})
     methods = hardened.get("methods", {})
 
-    print("  Armory's Samaritan OS claims 'self-learning threat library.'")
-    print("  Every C-UAS vendor markets this. Nobody shows how it works.")
+    print("  Every C-UAS vendor markets 'self-learning threat library.'")
+    print("  Nobody shows how it actually works.")
     print()
     print("  The problem: enrolling new drones without forgetting old ones.")
     print("  AVR-CL (Anchor-Verify-Repair) solves this.")
@@ -285,7 +278,7 @@ def demo_summary(results):
     print("    3. Remote ID spoof authentication via RF fingerprinting")
     print("    4. Continual learning for RF fingerprinting (AVR-CL)")
     print()
-    print("  These close gaps Armory explicitly named in their Oct/Dec 2025 blogs.")
+    print("  These are first-of-kind contributions to C-UAS.")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
