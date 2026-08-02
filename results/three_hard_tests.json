@@ -1,0 +1,41 @@
+{
+  "test_1_cross_dataset": {
+    "status": "FAIL",
+    "auc_rfuav_holdout": 1.0,
+    "auc_drffr2": 0.280094,
+    "drffr2_mean_dist": 18.762536530350758,
+    "rfuav_mean_dist": 9.77563755287333,
+    "bg_mean_dist": 18.610815886587837,
+    "n_drffr2_samples": 1000,
+    "n_drffr2_types": 8,
+    "drffr2_types": [
+      "mavic3C_u1",
+      "mavic3S_u1",
+      "mavic3_u1",
+      "mavicAir2_u1",
+      "mavicAir2s_u1",
+      "mini3pro_u2",
+      "mini4PRO_u1",
+      "mini5PRO_u1"
+    ]
+  },
+  "test_2_iqfm_comparison": {
+    "status": "ERROR",
+    "error": "No module named 'transformers'"
+  },
+  "test_3_hard_negatives": {
+    "auc_hard_negatives": 0.32047267996530787,
+    "auc_real_negatives": 1.0,
+    "threshold": 11.220166920333906,
+    "drone_detection_rate": 0.7541196877710321,
+    "hard_neg_fp_rate": 0.77,
+    "real_neg_fp_rate": 0.0,
+    "hard_neg_mean_dist": 8.58420737261514,
+    "drone_mean_dist": 9.77563755287333,
+    "real_neg_mean_dist": 19.055545217043417,
+    "n_hard_negs": 500,
+    "n_real_negs": 500,
+    "verdict": "FAIL \u2014 spectral artifact"
+  },
+  "timestamp": "2026-08-02 18:48:02 UTC"
+}
