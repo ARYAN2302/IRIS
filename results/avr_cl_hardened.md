@@ -1,25 +1,25 @@
 # IRIS AVR-CL Hardened Experiment — 3 Seeds + EWC Baseline
 
-**Generated:** 2026-07-31 11:11:29 UTC
+**Generated:** 2026-08-02 18:34:57 UTC
 
 **Holdout types:** 7
-**Test samples:** 175
+**Test samples:** 521
 
 ## Results (3 seeds each)
 
 | Method | Mean | Std | Min | Max |
 |---|---|---|---|---|
-| naive_high_lr | 0.484 | 0.079 | 0.377 | 0.566 |
-| naive_low_lr | 0.484 | 0.079 | 0.377 | 0.566 |
-| ewc | 0.482 | 0.098 | 0.366 | 0.606 |
-| avr_cl | 0.781 | 0.075 | 0.686 | 0.869 |
+| naive_high_lr | 0.037 | 0.007 | 0.027 | 0.044 |
+| naive_low_lr | 0.037 | 0.007 | 0.027 | 0.044 |
+| ewc | 0.030 | 0.002 | 0.027 | 0.033 |
+| avr_cl | 0.725 | 0.035 | 0.676 | 0.754 |
 
 ## Key Findings
 
-- **Naive (high LR):** 0.484 ± 0.079
-- **Naive (low LR):** 0.484 ± 0.079
-- **EWC:** 0.482 ± 0.098
-- **AVR-CL:** 0.781 ± 0.075
+- **Naive (high LR):** 0.037 ± 0.007
+- **Naive (low LR):** 0.037 ± 0.007
+- **EWC:** 0.030 ± 0.002
+- **AVR-CL:** 0.725 ± 0.035
 
-- **AVR-CL vs Naive:** 1.6x improvement
-- **AVR-CL vs EWC:** 1.6x improvement
+- **AVR-CL vs Naive:** 19.5x improvement
+- **AVR-CL vs EWC:** 24.1x improvement

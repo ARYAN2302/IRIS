@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-07-31 11:11:29 UTC",
+  "timestamp": "2026-08-02 18:34:57 UTC",
   "holdout_types": [
     "DJI FPV COMBO",
     "FUTABA-T10J",
@@ -9,7 +9,7 @@
     "RadioMaster BOXER",
     "WFLY ET10"
   ],
-  "n_test_samples": 175,
+  "n_test_samples": 521,
   "methods": {
     "naive_high_lr": {
       "method": "naive",
@@ -17,7 +17,7 @@
       "seeds": [
         {
           "seed": 42,
-          "final_accuracy": 0.5657142857142857,
+          "final_accuracy": 0.04030710172744722,
           "history": [
             {
               "step": 1,
@@ -28,37 +28,37 @@
             {
               "step": 2,
               "type": "FUTABA-T10J",
-              "accuracy": 0.98,
+              "accuracy": 0.15333333333333332,
               "repairs": 0
             },
             {
               "step": 3,
               "type": "FUTABA-T14SG",
-              "accuracy": 0.9333333333333333,
+              "accuracy": 0.08444444444444445,
               "repairs": 0
             },
             {
               "step": 4,
               "type": "JR PROPO XG7",
-              "accuracy": 0.84,
+              "accuracy": 0.01,
               "repairs": 0
             },
             {
               "step": 5,
               "type": "JUMPER-T14",
-              "accuracy": 0.712,
+              "accuracy": 0.04533333333333334,
               "repairs": 0
             },
             {
               "step": 6,
               "type": "RadioMaster BOXER",
-              "accuracy": 0.58,
+              "accuracy": 0.03111111111111111,
               "repairs": 0
             },
             {
               "step": 7,
               "type": "WFLY ET10",
-              "accuracy": 0.5657142857142857,
+              "accuracy": 0.04030710172744722,
               "repairs": 0
             }
           ],
@@ -66,7 +66,7 @@
         },
         {
           "seed": 123,
-          "final_accuracy": 0.5085714285714286,
+          "final_accuracy": 0.026871401151631478,
           "history": [
             {
               "step": 1,
@@ -77,37 +77,37 @@
             {
               "step": 2,
               "type": "FUTABA-T10J",
-              "accuracy": 0.96,
+              "accuracy": 0.6333333333333333,
               "repairs": 0
             },
             {
               "step": 3,
               "type": "FUTABA-T14SG",
-              "accuracy": 0.7733333333333333,
+              "accuracy": 0.21333333333333335,
               "repairs": 0
             },
             {
               "step": 4,
               "type": "JR PROPO XG7",
-              "accuracy": 0.71,
+              "accuracy": 0.043333333333333335,
               "repairs": 0
             },
             {
               "step": 5,
               "type": "JUMPER-T14",
-              "accuracy": 0.632,
+              "accuracy": 0.23733333333333334,
               "repairs": 0
             },
             {
               "step": 6,
               "type": "RadioMaster BOXER",
-              "accuracy": 0.5466666666666666,
+              "accuracy": 0.15555555555555556,
               "repairs": 0
             },
             {
               "step": 7,
               "type": "WFLY ET10",
-              "accuracy": 0.5085714285714286,
+              "accuracy": 0.026871401151631478,
               "repairs": 0
             }
           ],
@@ -115,58 +115,58 @@
         },
         {
           "seed": 456,
-          "final_accuracy": 0.37714285714285717,
+          "final_accuracy": 0.044145873320537425,
           "history": [
             {
               "step": 1,
               "type": "DJI FPV COMBO",
-              "accuracy": 1.0,
+              "accuracy": 0.9866666666666667,
               "repairs": 0
             },
             {
               "step": 2,
               "type": "FUTABA-T10J",
-              "accuracy": 0.9,
+              "accuracy": 0.68,
               "repairs": 0
             },
             {
               "step": 3,
               "type": "FUTABA-T14SG",
-              "accuracy": 0.7866666666666666,
+              "accuracy": 0.39111111111111113,
               "repairs": 0
             },
             {
               "step": 4,
               "type": "JR PROPO XG7",
-              "accuracy": 0.66,
+              "accuracy": 0.03,
               "repairs": 0
             },
             {
               "step": 5,
               "type": "JUMPER-T14",
-              "accuracy": 0.512,
+              "accuracy": 0.21066666666666667,
               "repairs": 0
             },
             {
               "step": 6,
               "type": "RadioMaster BOXER",
-              "accuracy": 0.4266666666666667,
+              "accuracy": 0.18222222222222223,
               "repairs": 0
             },
             {
               "step": 7,
               "type": "WFLY ET10",
-              "accuracy": 0.37714285714285717,
+              "accuracy": 0.044145873320537425,
               "repairs": 0
             }
           ],
           "repairs": 0
         }
       ],
-      "mean": 0.48380952380952386,
-      "std": 0.0789500258135722,
-      "min": 0.37714285714285717,
-      "max": 0.5657142857142857
+      "mean": 0.037108125399872044,
+      "std": 0.007406165644779414,
+      "min": 0.026871401151631478,
+      "max": 0.044145873320537425
     },
     "naive_low_lr": {
       "method": "naive",
@@ -174,7 +174,7 @@
       "seeds": [
         {
           "seed": 42,
-          "final_accuracy": 0.5657142857142857,
+          "final_accuracy": 0.04030710172744722,
           "history": [
             {
               "step": 1,
@@ -185,37 +185,37 @@
             {
               "step": 2,
               "type": "FUTABA-T10J",
-              "accuracy": 0.98,
+              "accuracy": 0.15333333333333332,
               "repairs": 0
             },
             {
               "step": 3,
               "type": "FUTABA-T14SG",
-              "accuracy": 0.9333333333333333,
+              "accuracy": 0.08444444444444445,
               "repairs": 0
             },
             {
               "step": 4,
               "type": "JR PROPO XG7",
-              "accuracy": 0.84,
+              "accuracy": 0.01,
               "repairs": 0
             },
             {
               "step": 5,
               "type": "JUMPER-T14",
-              "accuracy": 0.712,
+              "accuracy": 0.04533333333333334,
               "repairs": 0
             },
             {
               "step": 6,
               "type": "RadioMaster BOXER",
-              "accuracy": 0.58,
+              "accuracy": 0.03111111111111111,
               "repairs": 0
             },
             {
               "step": 7,
               "type": "WFLY ET10",
-              "accuracy": 0.5657142857142857,
+              "accuracy": 0.04030710172744722,
               "repairs": 0
             }
           ],
@@ -223,7 +223,7 @@
         },
         {
           "seed": 123,
-          "final_accuracy": 0.5085714285714286,
+          "final_accuracy": 0.026871401151631478,
           "history": [
             {
               "step": 1,
@@ -234,37 +234,37 @@
             {
               "step": 2,
               "type": "FUTABA-T10J",
-              "accuracy": 0.96,
+              "accuracy": 0.6333333333333333,
               "repairs": 0
             },
             {
               "step": 3,
               "type": "FUTABA-T14SG",
-              "accuracy": 0.7733333333333333,
+              "accuracy": 0.2222222222222222,
               "repairs": 0
             },
             {
               "step": 4,
               "type": "JR PROPO XG7",
-              "accuracy": 0.71,
+              "accuracy": 0.043333333333333335,
               "repairs": 0
             },
             {
               "step": 5,
               "type": "JUMPER-T14",
-              "accuracy": 0.632,
+              "accuracy": 0.23733333333333334,
               "repairs": 0
             },
             {
               "step": 6,
               "type": "RadioMaster BOXER",
-              "accuracy": 0.5466666666666666,
+              "accuracy": 0.15555555555555556,
               "repairs": 0
             },
             {
               "step": 7,
               "type": "WFLY ET10",
-              "accuracy": 0.5085714285714286,
+              "accuracy": 0.026871401151631478,
               "repairs": 0
             }
           ],
@@ -272,58 +272,58 @@
         },
         {
           "seed": 456,
-          "final_accuracy": 0.37714285714285717,
+          "final_accuracy": 0.044145873320537425,
           "history": [
             {
               "step": 1,
               "type": "DJI FPV COMBO",
-              "accuracy": 1.0,
+              "accuracy": 0.9866666666666667,
               "repairs": 0
             },
             {
               "step": 2,
               "type": "FUTABA-T10J",
-              "accuracy": 0.9,
+              "accuracy": 0.68,
               "repairs": 0
             },
             {
               "step": 3,
               "type": "FUTABA-T14SG",
-              "accuracy": 0.7866666666666666,
+              "accuracy": 0.39111111111111113,
               "repairs": 0
             },
             {
               "step": 4,
               "type": "JR PROPO XG7",
-              "accuracy": 0.66,
+              "accuracy": 0.03,
               "repairs": 0
             },
             {
               "step": 5,
               "type": "JUMPER-T14",
-              "accuracy": 0.512,
+              "accuracy": 0.21066666666666667,
               "repairs": 0
             },
             {
               "step": 6,
               "type": "RadioMaster BOXER",
-              "accuracy": 0.4266666666666667,
+              "accuracy": 0.18222222222222223,
               "repairs": 0
             },
             {
               "step": 7,
               "type": "WFLY ET10",
-              "accuracy": 0.37714285714285717,
+              "accuracy": 0.044145873320537425,
               "repairs": 0
             }
           ],
           "repairs": 0
         }
       ],
-      "mean": 0.48380952380952386,
-      "std": 0.0789500258135722,
-      "min": 0.37714285714285717,
-      "max": 0.5657142857142857
+      "mean": 0.037108125399872044,
+      "std": 0.007406165644779414,
+      "min": 0.026871401151631478,
+      "max": 0.044145873320537425
     },
     "ewc": {
       "method": "ewc",
@@ -331,48 +331,48 @@
       "seeds": [
         {
           "seed": 42,
-          "final_accuracy": 0.6057142857142858,
+          "final_accuracy": 0.030710172744721688,
           "history": [
             {
               "step": 1,
               "type": "DJI FPV COMBO",
-              "accuracy": 1.0,
+              "accuracy": 0.9733333333333334,
               "repairs": 0
             },
             {
               "step": 2,
               "type": "FUTABA-T10J",
-              "accuracy": 1.0,
+              "accuracy": 0.12666666666666668,
               "repairs": 0
             },
             {
               "step": 3,
               "type": "FUTABA-T14SG",
-              "accuracy": 0.9066666666666666,
+              "accuracy": 0.06222222222222222,
               "repairs": 0
             },
             {
               "step": 4,
               "type": "JR PROPO XG7",
-              "accuracy": 0.76,
+              "accuracy": 0.01,
               "repairs": 0
             },
             {
               "step": 5,
               "type": "JUMPER-T14",
-              "accuracy": 0.712,
+              "accuracy": 0.048,
               "repairs": 0
             },
             {
               "step": 6,
               "type": "RadioMaster BOXER",
-              "accuracy": 0.5066666666666667,
+              "accuracy": 0.03111111111111111,
               "repairs": 0
             },
             {
               "step": 7,
               "type": "WFLY ET10",
-              "accuracy": 0.6057142857142858,
+              "accuracy": 0.030710172744721688,
               "repairs": 0
             }
           ],
@@ -380,48 +380,48 @@
         },
         {
           "seed": 123,
-          "final_accuracy": 0.4742857142857143,
+          "final_accuracy": 0.026871401151631478,
           "history": [
             {
               "step": 1,
               "type": "DJI FPV COMBO",
-              "accuracy": 1.0,
+              "accuracy": 0.9733333333333334,
               "repairs": 0
             },
             {
               "step": 2,
               "type": "FUTABA-T10J",
-              "accuracy": 0.94,
+              "accuracy": 0.26,
               "repairs": 0
             },
             {
               "step": 3,
               "type": "FUTABA-T14SG",
-              "accuracy": 0.7333333333333333,
+              "accuracy": 0.1288888888888889,
               "repairs": 0
             },
             {
               "step": 4,
               "type": "JR PROPO XG7",
-              "accuracy": 0.56,
+              "accuracy": 0.04,
               "repairs": 0
             },
             {
               "step": 5,
               "type": "JUMPER-T14",
-              "accuracy": 0.608,
+              "accuracy": 0.2853333333333333,
               "repairs": 0
             },
             {
               "step": 6,
               "type": "RadioMaster BOXER",
-              "accuracy": 0.5266666666666666,
+              "accuracy": 0.11555555555555555,
               "repairs": 0
             },
             {
               "step": 7,
               "type": "WFLY ET10",
-              "accuracy": 0.4742857142857143,
+              "accuracy": 0.026871401151631478,
               "repairs": 0
             }
           ],
@@ -429,58 +429,58 @@
         },
         {
           "seed": 456,
-          "final_accuracy": 0.3657142857142857,
+          "final_accuracy": 0.03262955854126679,
           "history": [
             {
               "step": 1,
               "type": "DJI FPV COMBO",
-              "accuracy": 1.0,
+              "accuracy": 0.9733333333333334,
               "repairs": 0
             },
             {
               "step": 2,
               "type": "FUTABA-T10J",
-              "accuracy": 0.9,
+              "accuracy": 0.24666666666666667,
               "repairs": 0
             },
             {
               "step": 3,
               "type": "FUTABA-T14SG",
-              "accuracy": 0.7466666666666667,
+              "accuracy": 0.39111111111111113,
               "repairs": 0
             },
             {
               "step": 4,
               "type": "JR PROPO XG7",
-              "accuracy": 0.58,
+              "accuracy": 0.023333333333333334,
               "repairs": 0
             },
             {
               "step": 5,
               "type": "JUMPER-T14",
-              "accuracy": 0.496,
+              "accuracy": 0.22133333333333333,
               "repairs": 0
             },
             {
               "step": 6,
               "type": "RadioMaster BOXER",
-              "accuracy": 0.4066666666666667,
+              "accuracy": 0.1688888888888889,
               "repairs": 0
             },
             {
               "step": 7,
               "type": "WFLY ET10",
-              "accuracy": 0.3657142857142857,
+              "accuracy": 0.03262955854126679,
               "repairs": 0
             }
           ],
           "repairs": 0
         }
       ],
-      "mean": 0.4819047619047619,
-      "std": 0.09812759521821912,
-      "min": 0.3657142857142857,
-      "max": 0.6057142857142858
+      "mean": 0.030070377479206656,
+      "std": 0.0023938946812373254,
+      "min": 0.026871401151631478,
+      "max": 0.03262955854126679
     },
     "avr_cl": {
       "method": "avr_cl",
@@ -488,7 +488,7 @@
       "seeds": [
         {
           "seed": 42,
-          "final_accuracy": 0.8685714285714285,
+          "final_accuracy": 0.744721689059501,
           "history": [
             {
               "step": 1,
@@ -499,45 +499,45 @@
             {
               "step": 2,
               "type": "FUTABA-T10J",
-              "accuracy": 0.98,
-              "repairs": 0
+              "accuracy": 0.6533333333333333,
+              "repairs": 1
             },
             {
               "step": 3,
               "type": "FUTABA-T14SG",
-              "accuracy": 0.9333333333333333,
-              "repairs": 0
+              "accuracy": 0.7511111111111111,
+              "repairs": 1
             },
             {
               "step": 4,
               "type": "JR PROPO XG7",
-              "accuracy": 0.93,
+              "accuracy": 0.5033333333333333,
               "repairs": 5
             },
             {
               "step": 5,
               "type": "JUMPER-T14",
-              "accuracy": 0.792,
+              "accuracy": 0.648,
               "repairs": 5
             },
             {
               "step": 6,
               "type": "RadioMaster BOXER",
-              "accuracy": 0.7266666666666667,
+              "accuracy": 0.6377777777777778,
               "repairs": 5
             },
             {
               "step": 7,
               "type": "WFLY ET10",
-              "accuracy": 0.8685714285714285,
+              "accuracy": 0.744721689059501,
               "repairs": 5
             }
           ],
-          "repairs": 20
+          "repairs": 22
         },
         {
           "seed": 123,
-          "final_accuracy": 0.6857142857142857,
+          "final_accuracy": 0.7543186180422264,
           "history": [
             {
               "step": 1,
@@ -548,96 +548,96 @@
             {
               "step": 2,
               "type": "FUTABA-T10J",
-              "accuracy": 0.96,
-              "repairs": 0
+              "accuracy": 0.76,
+              "repairs": 1
             },
             {
               "step": 3,
               "type": "FUTABA-T14SG",
-              "accuracy": 0.7733333333333333,
-              "repairs": 0
+              "accuracy": 0.7288888888888889,
+              "repairs": 1
             },
             {
               "step": 4,
               "type": "JR PROPO XG7",
-              "accuracy": 0.85,
-              "repairs": 1
+              "accuracy": 0.6866666666666666,
+              "repairs": 5
             },
             {
               "step": 5,
               "type": "JUMPER-T14",
-              "accuracy": 0.768,
-              "repairs": 1
+              "accuracy": 0.7173333333333334,
+              "repairs": 5
             },
             {
               "step": 6,
               "type": "RadioMaster BOXER",
-              "accuracy": 0.72,
-              "repairs": 1
+              "accuracy": 0.6177777777777778,
+              "repairs": 0
             },
             {
               "step": 7,
               "type": "WFLY ET10",
-              "accuracy": 0.6857142857142857,
-              "repairs": 0
-            }
-          ],
-          "repairs": 3
-        },
-        {
-          "seed": 456,
-          "final_accuracy": 0.7885714285714286,
-          "history": [
-            {
-              "step": 1,
-              "type": "DJI FPV COMBO",
-              "accuracy": 1.0,
-              "repairs": 0
-            },
-            {
-              "step": 2,
-              "type": "FUTABA-T10J",
-              "accuracy": 0.9,
-              "repairs": 0
-            },
-            {
-              "step": 3,
-              "type": "FUTABA-T14SG",
-              "accuracy": 0.7866666666666666,
-              "repairs": 0
-            },
-            {
-              "step": 4,
-              "type": "JR PROPO XG7",
-              "accuracy": 0.84,
-              "repairs": 1
-            },
-            {
-              "step": 5,
-              "type": "JUMPER-T14",
-              "accuracy": 0.752,
-              "repairs": 1
-            },
-            {
-              "step": 6,
-              "type": "RadioMaster BOXER",
-              "accuracy": 0.68,
-              "repairs": 1
-            },
-            {
-              "step": 7,
-              "type": "WFLY ET10",
-              "accuracy": 0.7885714285714286,
+              "accuracy": 0.7543186180422264,
               "repairs": 5
             }
           ],
-          "repairs": 8
+          "repairs": 17
+        },
+        {
+          "seed": 456,
+          "final_accuracy": 0.6756238003838771,
+          "history": [
+            {
+              "step": 1,
+              "type": "DJI FPV COMBO",
+              "accuracy": 0.9866666666666667,
+              "repairs": 0
+            },
+            {
+              "step": 2,
+              "type": "FUTABA-T10J",
+              "accuracy": 0.7666666666666667,
+              "repairs": 1
+            },
+            {
+              "step": 3,
+              "type": "FUTABA-T14SG",
+              "accuracy": 0.7111111111111111,
+              "repairs": 1
+            },
+            {
+              "step": 4,
+              "type": "JR PROPO XG7",
+              "accuracy": 0.57,
+              "repairs": 5
+            },
+            {
+              "step": 5,
+              "type": "JUMPER-T14",
+              "accuracy": 0.7013333333333334,
+              "repairs": 5
+            },
+            {
+              "step": 6,
+              "type": "RadioMaster BOXER",
+              "accuracy": 0.6644444444444444,
+              "repairs": 5
+            },
+            {
+              "step": 7,
+              "type": "WFLY ET10",
+              "accuracy": 0.6756238003838771,
+              "repairs": 5
+            }
+          ],
+          "repairs": 22
         }
       ],
-      "mean": 0.780952380952381,
-      "std": 0.07484526744528952,
-      "min": 0.6857142857142857,
-      "max": 0.8685714285714285
+      "mean": 0.7248880358285349,
+      "std": 0.03505470897454312,
+      "min": 0.6756238003838771,
+      "max": 0.7543186180422264
     }
   }
 }

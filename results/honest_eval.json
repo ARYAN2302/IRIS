@@ -1,0 +1,132 @@
+{
+  "timestamp": "2026-08-02 18:25:42 UTC",
+  "model": "IRIS v11",
+  "encoder_params": 3745152,
+  "evaluation_protocol": {
+    "cv_method": "recording_grouped",
+    "l2_normalize": true,
+    "mahalanobis_reg": 0.001,
+    "source": "Shulman 2026 (arXiv:2607.01025) + Mahalanobis++ 2025"
+  },
+  "recording_grouped_cv": {
+    "auc": 1.0,
+    "tpr_at_fpr_05pct": 1.0,
+    "threshold_at_fpr_05pct": 15.555739172028035,
+    "tpr_at_fprs": {
+      "0.005": {
+        "tpr": 1.0,
+        "fpr": 0.0,
+        "threshold": 15.555739172028035
+      },
+      "0.01": {
+        "tpr": 1.0,
+        "fpr": 0.0,
+        "threshold": 15.555739172028035
+      },
+      "0.05": {
+        "tpr": 1.0,
+        "fpr": 0.0,
+        "threshold": 15.555739172028035
+      },
+      "0.1": {
+        "tpr": 1.0,
+        "fpr": 0.0,
+        "threshold": 15.555739172028035
+      }
+    },
+    "drone_mean_dist": 9.988977014881174,
+    "bg_mean_dist": 18.413746840236644,
+    "drone_median_dist": 10.354889776362445,
+    "bg_median_dist": 18.41329488946521,
+    "n_holdout": 2985,
+    "n_bg": 2000
+  },
+  "snr_curve": {
+    "curve": {
+      "25": {
+        "auc": 1.0,
+        "drone_mean_dist": 9.988977014881174,
+        "bg_mean_dist": 18.413746840236644
+      },
+      "20": {
+        "auc": 1.0,
+        "drone_mean_dist": 9.97291546461215,
+        "bg_mean_dist": 18.489566808747323
+      },
+      "15": {
+        "auc": 0.999997487437186,
+        "drone_mean_dist": 9.78535759633137,
+        "bg_mean_dist": 18.598699112780267
+      },
+      "10": {
+        "auc": 0.9997281407035177,
+        "drone_mean_dist": 9.58179424142095,
+        "bg_mean_dist": 18.929692812807357
+      },
+      "5": {
+        "auc": 0.9906705192629814,
+        "drone_mean_dist": 11.730755946824182,
+        "bg_mean_dist": 19.76460908834405
+      },
+      "0": {
+        "auc": 0.9255993299832497,
+        "drone_mean_dist": 14.502332719710301,
+        "bg_mean_dist": 17.815767956880155
+      },
+      "-5": {
+        "auc": 0.675196147403685,
+        "drone_mean_dist": 15.084054367712795,
+        "bg_mean_dist": 15.610496203011468
+      },
+      "-10": {
+        "auc": 0.7908082077051926,
+        "drone_mean_dist": 12.631889576457448,
+        "bg_mean_dist": 12.78912526048622
+      },
+      "-12": {
+        "auc": 0.7665591289782245,
+        "drone_mean_dist": 11.765764039000006,
+        "bg_mean_dist": 11.819915434912325
+      }
+    },
+    "snr_floor_85auc": -5,
+    "snr_floor_90auc": -5
+  },
+  "per_type": {
+    "DJI FPV COMBO": {
+      "n_samples": 1000,
+      "auc": 1.0,
+      "mean_dist": 10.809756153482983
+    },
+    "FUTABA-T10J": {
+      "n_samples": 453,
+      "auc": 1.0,
+      "mean_dist": 7.7043775128794465
+    },
+    "FUTABA-T14SG": {
+      "n_samples": 679,
+      "auc": 1.0,
+      "mean_dist": 10.562172947153694
+    },
+    "JR PROPO XG7": {
+      "n_samples": 216,
+      "auc": 1.0,
+      "mean_dist": 8.67843351174416
+    },
+    "JUMPER-T14": {
+      "n_samples": 251,
+      "auc": 1.0,
+      "mean_dist": 11.52399156827075
+    },
+    "RadioMaster BOXER": {
+      "n_samples": 244,
+      "auc": 1.0,
+      "mean_dist": 11.065310331263543
+    },
+    "WFLY ET10": {
+      "n_samples": 142,
+      "auc": 1.0,
+      "mean_dist": 6.186919355525156
+    }
+  }
+}

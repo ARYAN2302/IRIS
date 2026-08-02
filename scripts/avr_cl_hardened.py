@@ -150,7 +150,7 @@ def load_type_samples(h5_path, split, type_name, max_n=100):
         return np.stack(specs) if specs else np.array([])
 
 
-def load_all_type_samples(h5_path, split, max_per_type=50):
+def load_all_type_samples(h5_path, split, max_per_type=150):
     with h5py.File(h5_path, "r") as f:
         if split not in f: return {}
         grp = f[split]
@@ -389,7 +389,7 @@ def run_hardened():
 
     # Load holdout data
     print("\n[1] Loading holdout data...")
-    holdout_data = load_all_type_samples(H5_REMOTE, "holdout", max_per_type=50)
+    holdout_data = load_all_type_samples(H5_REMOTE, "holdout", max_per_type=150)
     holdout_types = sorted(holdout_data.keys())
     print(f"  {len(holdout_types)} types: {holdout_types}")
 

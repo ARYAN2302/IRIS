@@ -540,7 +540,7 @@ def eval_per_type(encoder, train_specs, holdout_specs, holdout_types, matched_bg
 
 @app.function(
     image=IMAGE,
-    gpu="A100",
+    gpu="T4",
     volumes={"/data": VOL, "/models": MODEL_VOL, "/matched": MATCHED_VOL, "/results": RESULTS_VOL},
     timeout=3600,
     memory=32768,

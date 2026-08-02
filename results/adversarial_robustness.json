@@ -1,0 +1,87 @@
+{
+  "timestamp": "2026-08-02 18:32:41 UTC",
+  "model": "IRIS v11",
+  "baseline_auc": 1.0,
+  "threshold": 11.220168581008911,
+  "fgsm_false_positive": {
+    "0.01": {
+      "auc_after_attack": 0.9999982886480319,
+      "bg_to_drone_rate": 0.0,
+      "auc_drop": 1.711351968136654e-06
+    },
+    "0.05": {
+      "auc_after_attack": 0.9996446092413007,
+      "bg_to_drone_rate": 0.0,
+      "auc_drop": 0.00035539075869928105
+    },
+    "0.1": {
+      "auc_after_attack": 0.9924489446662864,
+      "bg_to_drone_rate": 0.012,
+      "auc_drop": 0.0075510553337135855
+    },
+    "0.2": {
+      "auc_after_attack": 0.9677313177410154,
+      "bg_to_drone_rate": 0.035,
+      "auc_drop": 0.032268682258984605
+    }
+  },
+  "fgsm_evasion": {
+    "0.01": {
+      "auc_after_attack": 1.0,
+      "drone_to_bg_rate": 0.16029663434112948,
+      "auc_drop": 0.0
+    },
+    "0.05": {
+      "auc_after_attack": 1.0,
+      "drone_to_bg_rate": 0.0387906446092413,
+      "auc_drop": 0.0
+    },
+    "0.1": {
+      "auc_after_attack": 1.0,
+      "drone_to_bg_rate": 0.030233884768967486,
+      "auc_drop": 0.0
+    },
+    "0.2": {
+      "auc_after_attack": 1.0,
+      "drone_to_bg_rate": 0.026240730176839703,
+      "auc_drop": 0.0
+    }
+  },
+  "pgd_false_positive": {
+    "0.01": {
+      "auc_after_attack": 0.9999942954934398,
+      "bg_to_drone_rate": 0.0,
+      "auc_drop": 5.704506560233469e-06,
+      "n_test": 100
+    },
+    "0.05": {
+      "auc_after_attack": 0.9972390188248716,
+      "bg_to_drone_rate": 0.0,
+      "auc_drop": 0.002760981175128352,
+      "n_test": 100
+    },
+    "0.1": {
+      "auc_after_attack": 0.8841699942954935,
+      "bg_to_drone_rate": 0.18,
+      "auc_drop": 0.11583000570450652,
+      "n_test": 100
+    },
+    "0.2": {
+      "auc_after_attack": 0.5708956075299486,
+      "bg_to_drone_rate": 0.44,
+      "auc_drop": 0.4291043924700514,
+      "n_test": 100
+    }
+  },
+  "drfm_replay": {
+    "n_test": 50,
+    "n_replays": 10,
+    "original_detection_rate": 0.6,
+    "replay_detection_rate": 0.592,
+    "ghost_rate": 0.592,
+    "embedding_spread": 2.273923397064209,
+    "detection_consistency": 0.76,
+    "distance_variation": 0.22215907955169673,
+    "verdict": "PARTIAL \u2014 some DRFM replays create ghosts"
+  }
+}

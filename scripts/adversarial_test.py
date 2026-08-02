@@ -565,7 +565,7 @@ def drfm_replay_test(
 
 @app.function(
     image=IMAGE,
-    gpu="A100",
+    gpu="T4",
     volumes={"/data": VOL, "/models": MODEL_VOL, "/matched": MATCHED_VOL, "/results": RESULTS_VOL},
     timeout=3600,
     memory=32768,
@@ -593,9 +593,9 @@ def run_adversarial_test():
 
     # Load data
     print("\n[2/4] Loading data...")
-    train_specs, train_types = load_samples(H5_REMOTE, "train", max_per_type=200)
-    holdout_specs, holdout_types = load_samples(H5_REMOTE, "holdout", max_per_type=100)
-    matched_bg_specs = load_matched_bgs(MATCHED_REMOTE, "holdout", max_n=300)
+    train_specs, train_types = load_samples(H5_REMOTE, "train", max_per_type=500)
+    holdout_specs, holdout_types = load_samples(H5_REMOTE, "holdout", max_per_type=300)
+    matched_bg_specs = load_matched_bgs(MATCHED_REMOTE, "holdout", max_n=1000)
 
     # Encode train, fit Mahalanobis
     print("\n[3/4] Fitting Mahalanobis detector (L2-normalized)...")
