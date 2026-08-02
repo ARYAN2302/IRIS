@@ -1,0 +1,79 @@
+{
+  "test_1_cross_dataset": {
+    "auc_rfuav_holdout": 1.0,
+    "auc_drffr2": 0.24544,
+    "rfuav_mean_dist": 9.77563755287333,
+    "drffr2_mean_dist": 18.886809076340853,
+    "bg_mean_dist": 18.610815886587837,
+    "drffr2_detection_rate": 0.0,
+    "rfuav_detection_rate": 0.7541196877710321,
+    "per_type": {
+      "mavic3C_u1": {
+        "n": 200,
+        "auc": 0.24564,
+        "mean_dist": 18.885870982345455,
+        "detection_rate": 0.0
+      },
+      "mavic3S_u1": {
+        "n": 200,
+        "auc": 0.2452,
+        "mean_dist": 18.887974367846137,
+        "detection_rate": 0.0
+      },
+      "mavic3_u1": {
+        "n": 200,
+        "auc": 0.24569,
+        "mean_dist": 18.885563269239654,
+        "detection_rate": 0.0
+      },
+      "mavicAir2_u1": {
+        "n": 200,
+        "auc": 0.24543,
+        "mean_dist": 18.886801136031426,
+        "detection_rate": 0.0
+      },
+      "mavicAir2s_u1": {
+        "n": 50,
+        "auc": 0.24544,
+        "mean_dist": 18.887481639419942,
+        "detection_rate": 0.0
+      },
+      "mini3pro_u2": {
+        "n": 50,
+        "auc": 0.24572,
+        "mean_dist": 18.886139084658424,
+        "detection_rate": 0.0
+      },
+      "mini4PRO_u1": {
+        "n": 50,
+        "auc": 0.24523999999999999,
+        "mean_dist": 18.887257159051213,
+        "detection_rate": 0.0
+      },
+      "mini5PRO_u1": {
+        "n": 50,
+        "auc": 0.24456,
+        "mean_dist": 18.89046517397295,
+        "detection_rate": 0.0
+      }
+    },
+    "status": "FAIL"
+  },
+  "test_2_spectral_artifact": {
+    "auc_hard_negatives": 1.0,
+    "auc_real_negatives": 1.0,
+    "hard_neg_fp_rate": 0.0,
+    "real_neg_fp_rate": 0.0,
+    "drone_detection_rate": 0.7541196877710321,
+    "hard_neg_mean_dist": 18.91611361606226,
+    "drone_mean_dist": 9.77563755287333,
+    "real_neg_mean_dist": 19.055545217043417,
+    "verdict": "PASS \u2014 learned temporal patterns"
+  },
+  "test_3_individual_units": {
+    "models_with_multiple_units": {},
+    "unit_separation": {},
+    "verdict": "Units not distinguishable"
+  },
+  "timestamp": "2026-08-02 19:06:59 UTC"
+}
