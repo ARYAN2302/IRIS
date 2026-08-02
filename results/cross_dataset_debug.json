@@ -1,0 +1,119 @@
+{
+  "timestamp": "2026-08-02 19:16:11 UTC",
+  "threshold": 11.151403919487755,
+  "rfuav_holdout_mean_dist": 9.661510066273642,
+  "bg_mean_dist": 18.249867511788878,
+  "strategies": {
+    "A_direct_reshape": {
+      "mean_dist": 18.842491924558207,
+      "std": 0.008414874891469816,
+      "detection": 0.0
+    },
+    "B_stft_iq": {
+      "mean_dist": 19.105193136007106,
+      "std": 0.01814272035159512,
+      "detection": 0.0
+    },
+    "C_stft_ch2": {
+      "mean_dist": 19.10387460082291,
+      "std": 0.035467686834467035,
+      "detection": 0.0
+    },
+    "D_reshape_ch02": {
+      "mean_dist": 18.657950930669532,
+      "std": 0.03219681623813877,
+      "detection": 0.0
+    },
+    "E_stft_scaled": {
+      "mean_dist": 19.105193136007106,
+      "std": 0.01814272035159512,
+      "detection": 0.0
+    }
+  },
+  "best_strategy": "D_reshape_ch02",
+  "all_drone_results": {
+    "RFUAV/DJI FPV COMBO": {
+      "detection_rate": 0.1,
+      "mean_dist": 11.977679940633024,
+      "n": 100
+    },
+    "RFUAV/FUTABA-T10J": {
+      "detection_rate": 0.99,
+      "mean_dist": 7.748993166321511,
+      "n": 100
+    },
+    "RFUAV/FUTABA-T14SG": {
+      "detection_rate": 0.68,
+      "mean_dist": 10.65661714247642,
+      "n": 100
+    },
+    "RFUAV/JR PROPO XG7": {
+      "detection_rate": 1.0,
+      "mean_dist": 8.762840639902674,
+      "n": 100
+    },
+    "RFUAV/JUMPER-T14": {
+      "detection_rate": 0.36,
+      "mean_dist": 11.594466468618215,
+      "n": 100
+    },
+    "RFUAV/RadioMaster BOXER": {
+      "detection_rate": 0.62,
+      "mean_dist": 10.863208415635372,
+      "n": 100
+    },
+    "RFUAV/WFLY ET10": {
+      "detection_rate": 0.98,
+      "mean_dist": 6.026764690328285,
+      "n": 100
+    },
+    "DRFF-R2/mavic3C_u1": {
+      "detection_rate": 0.0,
+      "mean_dist": 18.693798108976292,
+      "n": 50
+    },
+    "DRFF-R2/mavic3S_u1": {
+      "detection_rate": 0.0,
+      "mean_dist": 18.67679770038235,
+      "n": 50
+    },
+    "DRFF-R2/mavic3_u1": {
+      "detection_rate": 0.0,
+      "mean_dist": 18.625322583839484,
+      "n": 50
+    },
+    "DRFF-R2/mavicAir2_u1": {
+      "detection_rate": 0.0,
+      "mean_dist": 18.65025409445297,
+      "n": 50
+    },
+    "DRFF-R2/mavicAir2s_u1": {
+      "detection_rate": 0.0,
+      "mean_dist": 18.682715177481636,
+      "n": 50
+    },
+    "DRFF-R2/mini3pro_u2": {
+      "detection_rate": 0.0,
+      "mean_dist": 18.658561008607805,
+      "n": 50
+    },
+    "DRFF-R2/mini4PRO_u1": {
+      "detection_rate": 0.0,
+      "mean_dist": 18.6232891019416,
+      "n": 50
+    },
+    "DRFF-R2/mini5PRO_u1": {
+      "detection_rate": 0.0,
+      "mean_dist": 18.65286966967411,
+      "n": 50
+    },
+    "DroneRF/negatives": {
+      "detection_rate": 0.0,
+      "mean_dist": 19.261732929561234,
+      "n": 500
+    }
+  },
+  "total_types": 15,
+  "detected_types": 5,
+  "generalization_rate": 0.3333333333333333
+}
