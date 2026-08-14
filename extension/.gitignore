@@ -1,0 +1,37 @@
+# Data files
+*.h5
+*.bin
+*.rar
+*.csv
+*.wav
+*.mp3
+*.parquet
+data/*
+!data/.gitkeep
+!data/README.md
+
+# Model checkpoints
+*.pt
+*.pth
+*.onnx
+
+# Results
+results/*.json
+results/*.png
+results/*.log
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+*.egg-info/
+
+# Modal
+.modal.toml
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo

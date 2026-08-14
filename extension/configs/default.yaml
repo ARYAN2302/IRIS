@@ -1,0 +1,93 @@
+# IRIS-CUAS Extension Configuration
+
+# RF Encoder (SCF features)
+rf:
+  in_ch: 2                    # 2=SCF only, 4=hybrid (SCF+autocorr+HOM)
+  embed_dim: 256
+  augment_factor: 20          # IQ augmentations per real sample
+  n_fft: 16384                # SCF FFT size (2^14)
+  alpha_max: 0.5              # SCF max cyclic frequency
+  window_len: 128             # SCF smoothing window
+  use_mixstyle: true
+  mixstyle_p: 0.5
+  mixstyle_alpha: 0.1
+  use_drift: false            # GRL domain adversarial (enable after SCF stable)
+  n_drone_types: 30
+  lr: 0.001
+  weight_decay: 0.01
+  n_epochs: 20
+  batch_size: 32
+
+# Acoustic Encoder
+acoustic:
+  in_ch: 1                    # mel-spectrogram is single channel
+  embed_dim: 256
+  sr: 16000
+  n_fft: 1024
+  hop_length: 256
+  n_mels: 256
+  duration: 4.0               # seconds per sample
+  fmin: 0.0
+  fmax: 8000.0
+  lr: 0.001
+  weight_decay: 0.01
+  n_epochs: 20
+  batch_size: 32
+
+# Radar Encoder
+radar:
+  in_ch: 1                    # range-Doppler map is single channel
+  embed_dim: 256
+  target_size: 256
+  lr: 0.001
+  weight_decay: 0.01
+  n_epochs: 20
+  batch_size: 32
+
+# Cross-Modal Distillation
+distillation:
+  lambda_distill: 1.0         # weight for L2 alignment loss
+  teacher_frozen: true        # RF encoder is frozen teacher
+  use_paired_data: true       # TSMS-Drone has paired radar+RF
+
+# Fusion
+fusion:
+  embed_dim: 256
+  n_modalities: 3             # RF + acoustic + radar
+  use_modality_dropout: true
+  dropout_p: 0.3              # each modality has 30% chance of being dropped
+  lr: 0.001
+  weight_decay: 0.01
+  n_epochs: 10
+
+# AVR-CL
+avr_cl:
+  embed_dim: 256
+  reg: 0.001                  # Mahalanobis regularization
+
+# Evaluation
+evaluation:
+  seeds: [42, 123, 7, 456, 789]
+  bg_fp_threshold: 0.01       # hard gate: any config with BG FP > 1% is invalid
+  cond_threshold: 100000      # collapse check
+  eff_dim_threshold: 10       # collapse check
+
+# SAPIENT Output
+sapient:
+  sensor_id: "IRIS-CUAS-001"
+  sensor_type: "multi_modal"
+
+# Adversarial
+adversarial:
+  epsilon_values: [0.001, 0.005, 0.01, 0.03, 0.05, 0.1]
+  pgd_steps: 10
+
+# Modal
+modal:
+  gpu: "T4"
+  memory: 16384
+  timeout: 3600
+  volumes:
+    data: "iris-cuas-data"
+    results: "iris-cuas-results"
+    models: "iris-cuas-models"
