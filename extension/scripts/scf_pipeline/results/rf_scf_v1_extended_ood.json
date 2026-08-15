@@ -1,0 +1,201 @@
+{
+  "timestamp": "2026-08-15 04:35:58 UTC",
+  "model": "/models/rf_scf_real_encoder_seed42.pt",
+  "threshold_99p": 5.448051066642355,
+  "tests": {
+    "loto_cross_val": {
+      "avg_det_rate": 0.9875454545454546,
+      "per_type": {
+        "DJI Inspire 2": {
+          "n_train": 5500,
+          "n_test": 500,
+          "threshold": 5.564697848652342,
+          "det_rate": 0.988,
+          "test_dist_mean": 3.2533016217845665,
+          "train_dist_mean": 1.9609991666730044
+        },
+        "DJI Matrice 100": {
+          "n_train": 5500,
+          "n_test": 500,
+          "threshold": 5.573080013171166,
+          "det_rate": 0.99,
+          "test_dist_mean": 3.0809534685643136,
+          "train_dist_mean": 1.9807903863913194
+        },
+        "DJI Matrice 210": {
+          "n_train": 5500,
+          "n_test": 500,
+          "threshold": 5.447402939618406,
+          "det_rate": 0.97,
+          "test_dist_mean": 2.818594211708497,
+          "train_dist_mean": 1.9978317561256884
+        },
+        "DJI Mavic Mini": {
+          "n_train": 5500,
+          "n_test": 500,
+          "threshold": 5.354221422185676,
+          "det_rate": 0.992,
+          "test_dist_mean": 1.8470722758661842,
+          "train_dist_mean": 2.0393799075601704
+        },
+        "DJI Mavic Pro": {
+          "n_train": 5500,
+          "n_test": 500,
+          "threshold": 5.475777824036564,
+          "det_rate": 0.998,
+          "test_dist_mean": 2.858697525240127,
+          "train_dist_mean": 1.9824327069724326
+        },
+        "DJI Phantom 4": {
+          "n_train": 5500,
+          "n_test": 500,
+          "threshold": 5.454733473866168,
+          "det_rate": 0.974,
+          "test_dist_mean": 3.139446412271741,
+          "train_dist_mean": 1.9634388011661983
+        },
+        "DJI Phantom 4 Pro+": {
+          "n_train": 5500,
+          "n_test": 500,
+          "threshold": 5.521373965770609,
+          "det_rate": 0.986,
+          "test_dist_mean": 2.599326329608112,
+          "train_dist_mean": 2.000637247646693
+        },
+        "Parrot Disco": {
+          "n_train": 5500,
+          "n_test": 500,
+          "threshold": 5.3323123460725474,
+          "det_rate": 0.996,
+          "test_dist_mean": 1.4855716255197426,
+          "train_dist_mean": 2.074488880575555
+        },
+        "Parrot Mambo (ctrl)": {
+          "n_train": 5500,
+          "n_test": 500,
+          "threshold": 5.377239592773946,
+          "det_rate": 0.994,
+          "test_dist_mean": 1.3961642543796402,
+          "train_dist_mean": 2.08269032208225
+        },
+        "Parrot Mambo (video)": {
+          "n_train": 5500,
+          "n_test": 500,
+          "threshold": 5.320039478026756,
+          "det_rate": 0.986,
+          "test_dist_mean": 1.619128338548967,
+          "train_dist_mean": 2.0613099122327325
+        },
+        "Yuneec Typhoon H": {
+          "n_train": 5000,
+          "n_test": 1000,
+          "threshold": 5.397899318474423,
+          "det_rate": 0.989,
+          "test_dist_mean": 1.8948344588991366,
+          "train_dist_mean": 2.0864142947502264
+        }
+      }
+    },
+    "roc_curve": {
+      "auc": 1.0,
+      "operating_points": {
+        "fpr_0.001": {
+          "threshold": Infinity,
+          "fpr": 0.0,
+          "tpr": 0.0
+        },
+        "fpr_0.005": {
+          "threshold": Infinity,
+          "fpr": 0.0,
+          "tpr": 0.0
+        },
+        "fpr_0.01": {
+          "threshold": Infinity,
+          "fpr": 0.0,
+          "tpr": 0.0
+        },
+        "fpr_0.05": {
+          "threshold": Infinity,
+          "fpr": 0.0,
+          "tpr": 0.0
+        },
+        "fpr_0.1": {
+          "threshold": Infinity,
+          "fpr": 0.0,
+          "tpr": 0.0
+        }
+      },
+      "n_bg": 500,
+      "n_drone": 200
+    },
+    "snr_sweep_fine": {
+      "snr_0db": {
+        "n": 50,
+        "det": 1.0,
+        "dist_mean": 1.212706546348854
+      },
+      "snr_2db": {
+        "n": 50,
+        "det": 1.0,
+        "dist_mean": 1.3130941648253738
+      },
+      "snr_4db": {
+        "n": 50,
+        "det": 1.0,
+        "dist_mean": 1.4084116293175413
+      },
+      "snr_6db": {
+        "n": 50,
+        "det": 1.0,
+        "dist_mean": 1.7911857484663256
+      },
+      "snr_8db": {
+        "n": 50,
+        "det": 1.0,
+        "dist_mean": 2.248688975525746
+      },
+      "snr_10db": {
+        "n": 50,
+        "det": 1.0,
+        "dist_mean": 2.7034855592110705
+      },
+      "snr_12db": {
+        "n": 50,
+        "det": 1.0,
+        "dist_mean": 3.3167206194328624
+      },
+      "snr_15db": {
+        "n": 50,
+        "det": 1.0,
+        "dist_mean": 3.942131698562235
+      },
+      "snr_20db": {
+        "n": 50,
+        "det": 1.0,
+        "dist_mean": 4.301075473997986
+      },
+      "snr_25db": {
+        "n": 50,
+        "det": 1.0,
+        "dist_mean": 4.422318442027031
+      },
+      "snr_30db": {
+        "n": 50,
+        "det": 1.0,
+        "dist_mean": 4.442429775060941
+      }
+    },
+    "large_bg_pure": {
+      "n_samples": 1000,
+      "fp_rate": 0.001,
+      "dist_mean": 15.47412717196114,
+      "dist_p99": 22.98303526646553,
+      "dist_max": 28.10374136414239
+    },
+    "bg_distribution_shift": {
+      "n_samples": 500,
+      "det_rate": 0.002,
+      "dist_mean": 6.091231401432906
+    }
+  }
+}

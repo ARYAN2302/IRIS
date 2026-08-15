@@ -1,0 +1,113 @@
+{
+  "timestamp": "2026-08-15 02:42:34 UTC",
+  "model": "/models/rf_scf_real_encoder_seed42.pt",
+  "threshold": 5.448051066642355,
+  "train_drone_dist_mean": 2.0299019860511374,
+  "tests": {
+    "bg_holdout_matched": {
+      "n_samples": 500,
+      "fp_rate": 0.0,
+      "dist_mean": 11.148055573697736,
+      "dist_median": 10.244040944146855,
+      "dist_p99": 18.26145870270192
+    },
+    "holdout_original": {
+      "n_samples": 500,
+      "detection_rate": 0.014,
+      "dist_mean": 7.11102822456414,
+      "dist_median": 6.244136745245875,
+      "dist_p10": 5.8490121139984685,
+      "dist_p90": 9.946929945958807
+    },
+    "drffr2": {
+      "n_samples": 1000,
+      "detection_rate": 0.985,
+      "dist_mean": 4.453503904644527,
+      "per_type": {
+        "mavic3C_u1": {
+          "n": 200,
+          "det": 0.99,
+          "dist_mean": 4.477158408835479
+        },
+        "mavic3S_u1": {
+          "n": 200,
+          "det": 1.0,
+          "dist_mean": 4.429727789912445
+        },
+        "mavic3_u1": {
+          "n": 200,
+          "det": 0.98,
+          "dist_mean": 4.4605274058633855
+        },
+        "mavicAir2_u1": {
+          "n": 200,
+          "det": 0.98,
+          "dist_mean": 4.480903062343195
+        },
+        "mavicAir2s_u1": {
+          "n": 50,
+          "det": 0.96,
+          "dist_mean": 4.513062743049012
+        },
+        "mini3pro_u2": {
+          "n": 50,
+          "det": 0.98,
+          "dist_mean": 4.186691094141469
+        },
+        "mini4PRO_u1": {
+          "n": 50,
+          "det": 0.96,
+          "dist_mean": 4.535410628243519
+        },
+        "mini5PRO_u1": {
+          "n": 50,
+          "det": 1.0,
+          "dist_mean": 4.441646959638539
+        }
+      }
+    },
+    "mixed_50_50": {
+      "n_bg": 500,
+      "n_drone": 448,
+      "tp": 442,
+      "fp": 0,
+      "tn": 500,
+      "fn": 6,
+      "precision": 1.0,
+      "recall": 0.9866071428571429,
+      "f1": 0.9932584269662922
+    },
+    "snr_stress": {
+      "snr_0db": {
+        "n": 104,
+        "det": 1.0,
+        "dist_mean": 1.2043608903475294
+      },
+      "snr_5db": {
+        "n": 104,
+        "det": 1.0,
+        "dist_mean": 1.520491525031212
+      },
+      "snr_10db": {
+        "n": 104,
+        "det": 1.0,
+        "dist_mean": 2.4651900463368315
+      },
+      "snr_15db": {
+        "n": 104,
+        "det": 0.9903846153846154,
+        "dist_mean": 3.7096777030906645
+      },
+      "snr_20db": {
+        "n": 104,
+        "det": 0.9903846153846154,
+        "dist_mean": 4.2812850064729195
+      },
+      "snr_30db": {
+        "n": 104,
+        "det": 0.9903846153846154,
+        "dist_mean": 4.4565101010762875
+      }
+    }
+  }
+}

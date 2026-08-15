@@ -1,0 +1,164 @@
+{
+  "source": {
+    "name": "Zenodo 4264467 \u2014 Radio-Frequency Control and Video Signal Recordings of Drones",
+    "url": "https://zenodo.org/records/4264467",
+    "doi": "10.5281/zenodo.4264467",
+    "author": "P\u00e4rlin, Karel",
+    "year": 2020,
+    "license": "CC-BY 4.0",
+    "format": "interleaved int16 LE IQ, 4 bytes/complex",
+    "sample_rate": "120 MSps (2.4GHz) / 200 MSps (5.8GHz)",
+    "citation": "P\u00e4rlin, K. (2020). Radio-Frequency Control and Video Signal Recordings of Drones [Data set]. Zenodo. https://doi.org/10.5281/zenodo.4264467"
+  },
+  "total_samples": 15000,
+  "trace_length": 4096,
+  "image_shape": [
+    2,
+    256,
+    256
+  ],
+  "image_dtype": "<class 'numpy.float32'>",
+  "channels": {
+    "0": "log10(|SCF| + eps), normalized per-channel (zero mean, unit std)",
+    "1": "|COH| (spectral coherence) in [0,1], normalized per-channel"
+  },
+  "drone_types": [
+    "DJI Inspire 2",
+    "DJI Matrice 100",
+    "DJI Matrice 210",
+    "DJI Mavic Mini",
+    "DJI Mavic Pro",
+    "DJI Phantom 4",
+    "DJI Phantom 4 Pro+",
+    "Parrot Disco",
+    "Parrot Mambo (ctrl)",
+    "Parrot Mambo (video)",
+    "Yuneec Typhoon H"
+  ],
+  "type_to_label": {
+    "DJI Inspire 2": 0,
+    "DJI Matrice 100": 1,
+    "DJI Matrice 210": 2,
+    "DJI Mavic Mini": 3,
+    "DJI Mavic Pro": 4,
+    "DJI Phantom 4": 5,
+    "DJI Phantom 4 Pro+": 6,
+    "Parrot Disco": 7,
+    "Parrot Mambo (ctrl)": 8,
+    "Parrot Mambo (video)": 9,
+    "Yuneec Typhoon H": 10
+  },
+  "per_file": [
+    {
+      "file": "DJI_matrice_100_2G.bin",
+      "drone_type": "DJI Matrice 100",
+      "band": "2.4GHz",
+      "n_traces": 1250,
+      "n_samples_in_file": 120000000,
+      "compute_time_s": 105.8
+    },
+    {
+      "file": "DJI_matrice_210_2G.bin",
+      "drone_type": "DJI Matrice 210",
+      "band": "2.4GHz",
+      "n_traces": 1250,
+      "n_samples_in_file": 120000000,
+      "compute_time_s": 108.6
+    },
+    {
+      "file": "DJI_inspire_2_2G.bin",
+      "drone_type": "DJI Inspire 2",
+      "band": "2.4GHz",
+      "n_traces": 1250,
+      "n_samples_in_file": 120000000,
+      "compute_time_s": 98.8
+    },
+    {
+      "file": "DJI_mavic_pro_2G.bin",
+      "drone_type": "DJI Mavic Pro",
+      "band": "2.4GHz",
+      "n_traces": 1250,
+      "n_samples_in_file": 120000000,
+      "compute_time_s": 105.1
+    },
+    {
+      "file": "DJI_mavic_mini_2G.bin",
+      "drone_type": "DJI Mavic Mini",
+      "band": "2.4GHz",
+      "n_traces": 1250,
+      "n_samples_in_file": 120000000,
+      "compute_time_s": 100.7
+    },
+    {
+      "file": "DJI_phantom_4_2G.bin",
+      "drone_type": "DJI Phantom 4",
+      "band": "2.4GHz",
+      "n_traces": 1250,
+      "n_samples_in_file": 120000000,
+      "compute_time_s": 101.8
+    },
+    {
+      "file": "DJI_phantom_4_pro_plus_2G.bin",
+      "drone_type": "DJI Phantom 4 Pro+",
+      "band": "2.4GHz",
+      "n_traces": 1250,
+      "n_samples_in_file": 120000000,
+      "compute_time_s": 103.8
+    },
+    {
+      "file": "Parrot_disco_2G.bin",
+      "drone_type": "Parrot Disco",
+      "band": "2.4GHz",
+      "n_traces": 1250,
+      "n_samples_in_file": 120000000,
+      "compute_time_s": 101.9
+    },
+    {
+      "file": "Parrot_mambo_control_2G.bin",
+      "drone_type": "Parrot Mambo (ctrl)",
+      "band": "2.4GHz",
+      "n_traces": 1250,
+      "n_samples_in_file": 120000000,
+      "compute_time_s": 100.5
+    },
+    {
+      "file": "Parrot_mambo_video_2G.bin",
+      "drone_type": "Parrot Mambo (video)",
+      "band": "2.4GHz",
+      "n_traces": 1250,
+      "n_samples_in_file": 120000000,
+      "compute_time_s": 102.6
+    },
+    {
+      "file": "Yuneec_typhoon_h_2G_1of2.bin",
+      "drone_type": "Yuneec Typhoon H",
+      "band": "2.4GHz",
+      "n_traces": 1250,
+      "n_samples_in_file": 120000000,
+      "compute_time_s": 111.6
+    },
+    {
+      "file": "Yuneec_typhoon_h_5G.bin",
+      "drone_type": "Yuneec Typhoon H",
+      "band": "5.8GHz",
+      "n_traces": 1250,
+      "n_samples_in_file": 100000000,
+      "compute_time_s": 104.8
+    }
+  ],
+  "per_type_counts": {
+    "DJI Inspire 2": 1250,
+    "DJI Matrice 100": 1250,
+    "DJI Matrice 210": 1250,
+    "DJI Mavic Mini": 1250,
+    "DJI Mavic Pro": 1250,
+    "DJI Phantom 4": 1250,
+    "DJI Phantom 4 Pro+": 1250,
+    "Parrot Disco": 1250,
+    "Parrot Mambo (ctrl)": 1250,
+    "Parrot Mambo (video)": 1250,
+    "Yuneec Typhoon H": 2500
+  },
+  "compute_time_s": 1246.0,
+  "created_utc": "2026-08-15 03:08:01 UTC"
+}
