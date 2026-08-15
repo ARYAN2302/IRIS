@@ -1,148 +1,183 @@
-# SCF Pipeline — Real Drone RF Detection with Spectral Correlation Function
+# IRIS Multimodal Drone Detection — RF + Acoustic + Radar Fusion
 
-This subdirectory contains the production SCF (Spectral Correlation Function) pipeline for IRIS RF drone detection.
+End-to-end pipeline for detecting drones using three sensor modalities:
+- **RF** (Radio Frequency) — Spectral Correlation Function features from drone controllers
+- **Acoustic** — Mel-spectrograms from drone propeller audio
+- **Radar** — Micro-Doppler signatures from drone radar returns
 
-## TL;DR
+The headline experiment is the **RF-Silent ablation**: with RF modality zeroed out at inference, the fusion head still retains **92.5% of full fusion accuracy** and **100% of AUC** — proving the fusion head never hard-depends on any single modality.
 
-**Production model**: `v3 VICReg` (trained on 6,000 real Zenodo SCF samples with VICReg loss)
+## Production Models
 
-| Metric | Value | Target |
-|--------|-------|--------|
-| DRFF-R2 holdout detection (99.9p threshold) | **99.70%** | >50% |
-| BG false positive rate | **0.0000** | <1% |
-| AUC (BG vs DRFF-R2) | **1.0000** | >90% |
-| Effective embedding dimension | **216 / 256** | >10 |
-| Source probe (domain invariance) | 0.9377 | ~0.5 |
-| SNR robustness | **100% det at 0 dB SNR** | >80% |
+| Modality | Encoder | Dataset | Detection | AUC | Eff Dim |
+|----------|---------|---------|-----------|-----|---------|
+| **RF** | `rf_scf_real_v3_encoder_seed42.pt` | Zenodo 4264467 (6k SCF samples) | 99.7% | 1.000 | 216 |
+| **Acoustic** | `acoustic_encoder_seed42.pt` | DADS + ESC-50 | 45.0% | 0.869 | 23 |
+| **Radar** | `radar_encoder_seed42.pt` | Open Radar Initiative (50 UAV) | 10.0% | 0.850 | 13 |
+| **Fusion** | `fusion_head_seed42.pt` | Synthetic paired (all 3 modalities) | 100% | 1.000 | — |
 
-## Pipeline Overview
+## RF Silent Ablation Results
+
+| Configuration | Accuracy | AUC |
+|---------------|----------|-----|
+| Full fusion (RF + Acoustic + Radar) | **1.0000** | **1.0000** |
+| RF-silent (Acoustic + Radar only) | 0.9250 | 1.0000 |
+| Acoustic-silent (RF + Radar) | 1.0000 | 1.0000 |
+| Radar-silent (RF + Acoustic) | 1.0000 | 1.0000 |
+| RF-only | 1.0000 | 1.0000 |
+| Acoustic-only | 0.9750 | 0.9950 |
+| Radar-only | 0.8750 | 0.9123 |
+
+**RF-Silent retention**: 92.5% accuracy, 100% AUC — system degrades gracefully when primary modality is unavailable.
+
+## Pipeline Architecture
 
 ```
-Zenodo .bin files (12 drone types, ~5 GB raw IQ)
-        │
-        ▼
-[1] slice_and_compute_scf_v2.py  (or spawn_zenodo_scf.py for Modal)
-        │  Slices each .bin into N traces of 4096 samples
-        │  Computes SCF + COH images (2, 256, 256) per trace
-        ▼
-zenodo_scf_samples.h5  (6,000 samples × 2 × 256 × 256 float32)
-        │
-        ▼
-[2] spawn_train_v3_vicreg.py  ← PRODUCTION
-        │  Trains CNN encoder with VICReg + SIGReg + BCE loss
-        │  Fits Mahalanobis on training drone embeddings
-        ▼
-rf_scf_real_v3_encoder_seed42.pt  (encoder + head)
-        │
-        ▼
-[3] spawn_extended_ood_test.py  (Option D - holdout evaluation)
-        │  Tests on DRFF-R2 (OOD drones), BG, SNR sweep, LOTO cross-val
-        ▼
-rf_scf_v1_extended_ood.json  (full eval metrics)
+                ┌─────────────────────────────────────────┐
+                │         MODALITY ENCODERS (frozen)       │
+                │                                         │
+   RF IQ ──SCF──▶ RF Encoder (VICReg) ──▶ 256-dim emb    │
+   Audio ──Mel──▶ Acoustic Encoder ─────▶ 256-dim emb    │
+   Radar ──RD───▶ Radar Encoder ────────▶ 256-dim emb    │
+                │                                         │
+                └──────────────┬──────────────────────────┘
+                               │
+                               ▼
+                ┌──────────────────────────────────────────┐
+                │  FusionHead (modality dropout p=0.3)     │
+                │  Linear(768→256) → BN → GELU →           │
+                │  Linear(256→256) → BN                    │
+                │                                          │
+                │  Input: concat 3 × 256-dim = 768-dim    │
+                │  Output: 256-dim unified embedding       │
+                └──────────────┬──────────────────────────┘
+                               │
+                               ▼
+                ┌──────────────────────────────────────────┐
+                │  Detection Head: Linear(256→64)→GELU→    │
+                │  Linear(64→1) — drone vs BG              │
+                └──────────────────────────────────────────┘
 ```
 
 ## Files
 
 ### Training/eval scripts (Modal launchers)
-- `spawn_zenodo_scf.py` — Modal: generate SCF samples from raw .bin files
-- `spawn_train_real_scf.py` — Modal: train v1 (SIGReg loss, 6k samples)
-- `spawn_train_real_scf_v2.py` — Modal: train v2 (SIGReg, 15k samples) — **REGRESSED, do not use**
-- `spawn_train_v3_vicreg.py` — Modal: train v3 (VICReg + SIGReg, 6k samples) ← **PRODUCTION**
-- `spawn_holdout_test.py` — Modal: holdout tests (Option A)
-- `spawn_extended_ood_test.py` — Modal: extended OOD tests (Option D)
+| Script | Purpose |
+|--------|---------|
+| `spawn_zenodo_scf.py` | Generate 6k SCF samples from Zenodo .bin files |
+| `spawn_train_real_scf.py` | Train v1 RF encoder (SIGReg, 6k) |
+| `spawn_train_real_scf_v2.py` | Train v2 RF encoder (SIGReg, 15k) — regressed |
+| `spawn_train_v3_vicreg.py` | **Train v3 RF encoder (VICReg, 6k) ← PRODUCTION** |
+| `spawn_train_acoustic.py` | Train acoustic encoder (DADS + ESC-50) |
+| `spawn_train_radar.py` | Train radar encoder (Open Radar Initiative) |
+| `spawn_holdout_test.py` | RF holdout tests (Option A) |
+| `spawn_extended_ood_test.py` | RF extended OOD tests (Option D) |
+| `spawn_fusion_rfsilent.py` | **Train fusion head + run RF Silent ablation** |
 
-### Local scripts (for development)
-- `slice_and_compute_scf_v2.py` — Local SCF generation (memory-mapped, slower than Modal)
+### Local scripts
+- `slice_and_compute_scf_v2.py` — Local SCF generation (memory-mapped)
 - `download_zenodo_missing.py` — Download missing Zenodo files
-- `verify_zenodo.py` — Sanity check Zenodo .bin files load correctly
+- `verify_zenodo.py` — Sanity check Zenodo .bin files
 
 ### Results (in `results/`)
-- `rf_scf_real_eval_seed42.json` — v1 eval (SIGReg, 6k samples)
-- `rf_scf_real_v2_eval_seed42.json` — v2 eval (SIGReg, 15k samples, regressed)
-- `rf_scf_real_v3_eval_seed42.json` — **v3 eval (VICReg, 6k samples) ← PRODUCTION**
-- `rf_scf_real_holdout_tests.json` — Option A holdout test results
-- `rf_scf_v1_extended_ood.json` — Option D extended OOD test results
-- `ABCD_SUMMARY.md` — Full A/B/C/D comparison report
+- `rf_scf_real_eval_seed42.json` — RF v1 eval
+- `rf_scf_real_v2_eval_seed42.json` — RF v2 eval (regressed)
+- `rf_scf_real_v3_eval_seed42.json` — **RF v3 eval (PRODUCTION)**
+- `rf_scf_real_holdout_tests.json` — RF holdout tests
+- `rf_scf_v1_extended_ood.json` — RF extended OOD tests
+- `acoustic_encoder_eval_seed42.json` — Acoustic encoder eval
+- `radar_encoder_eval_seed42.json` — Radar encoder eval
+- `rf_silent_ablation_seed42.json` — **RF Silent ablation results**
+- `ABCD_SUMMARY.md` — RF A/B/C/D comparison report
 
 ### Documentation (in `docs/`)
 - `INTEGRATION_REPORT.md` — Zenodo data source documentation
 
 ## How to Reproduce
 
-### 1. Generate SCF samples from Zenodo .bin files
-Prerequisite: 12 Zenodo `.bin` files in Modal volume `/raw_iq/`.
-
-```bash
-python extension/scripts/scf_pipeline/spawn_zenodo_scf.py
-```
-
-Produces `/data/zenodo_scf_samples.h5` (6,000 samples) on Modal volume `iris-cuas-data`.
-
-### 2. Train v3 encoder (production)
+### 1. Train RF encoder (v3 VICReg — production)
 ```bash
 python extension/scripts/scf_pipeline/spawn_train_v3_vicreg.py
 ```
+Produces: `/models/rf_scf_real_v3_encoder_seed42.pt`
 
-Produces:
-- `/models/rf_scf_real_v3_encoder_seed42.pt`
-- `/results/rf_scf_real_v3_eval_seed42.json`
-
-### 3. Run extended OOD tests
+### 2. Train acoustic encoder
 ```bash
-python extension/scripts/scf_pipeline/spawn_extended_ood_test.py
+python extension/scripts/scf_pipeline/spawn_train_acoustic.py
 ```
+Produces: `/models/acoustic_encoder_seed42.pt`
 
-Produces `/results/rf_scf_v1_extended_ood.json`.
+### 3. Train radar encoder
+```bash
+python extension/scripts/scf_pipeline/spawn_train_radar.py
+```
+Produces: `/models/radar_encoder_seed42.pt`
 
-## Comparison: v1 vs v2 vs v3
+### 4. Train fusion + run RF Silent ablation
+```bash
+python extension/scripts/scf_pipeline/spawn_fusion_rfsilent.py
+```
+Produces: `/models/fusion_head_seed42.pt` + `/results/rf_silent_ablation_seed42.json`
 
-| Model | Loss | Train samples | DRFF-R2 det | BG FP | AUC | Eff dim |
-|-------|------|---------------|-------------|-------|-----|---------|
-| v1 | SIGReg + BCE | 6,000 | 0.9850 (99p) | 0.0000 | 1.0000 | 2.04 |
-| v2 | SIGReg + BCE | 15,000 | 0.2880 (99p) | 0.0000 | 1.0000 | 1.98 |
-| **v3** | **VICReg + SIGReg + BCE** | **6,000** | **0.9970 (99.9p)** | **0.0000** | **1.0000** | **216.26** |
+## Data Sources
 
-### Why v2 regressed
-v2 expanded training data 2.5× but used the same SIGReg loss. The encoder overfit to Zenodo-specific features, making the Mahalanobis threshold too tight for DRFF-R2 (OOD drones).
+### RF — Zenodo 4264467
+- **Source**: Pärlin, K. (2020). Radio-Frequency Control and Video Signal Recordings of Drones. Zenodo.
+- **URL**: https://zenodo.org/records/4264467
+- **DOI**: 10.5281/zenodo.4264467
+- **License**: CC-BY 4.0
+- **Format**: Interleaved int16 LE IQ, 4 bytes/complex sample
+- **Sample rate**: 120 MSps (2.4 GHz) / 200 MSps (5.8 GHz)
+- **Coverage**: 12 drone files covering 11 distinct types (DJI, Parrot, Yuneec)
 
-### Why v3 wins
-v3 keeps v1's training set (6k samples) but adds VICReg loss:
-- **Variance loss**: penalize per-dim std < 1.0 (prevents collapse)
-- **Covariance loss**: decorrelate embedding dimensions
-- Result: eff_dim jumps from 2 to 216, source probe drops from 0.99 to 0.94 (more domain-invariant)
+### Acoustic — DADS + ESC-50
+- **DADS** (drone positives): Drone Audio Detection Samples
+  - URL: https://huggingface.co/datasets/geronimobasso/drone-audio-detection-samples
+  - License: MIT
+  - 100K+ drone audio clips, parquet format
+- **ESC-50** (BG negatives): Environmental Sound Classification
+  - URL: https://github.com/karolpiczak/ESC-50
+  - License: CC-BY-NC-4.0
+  - 2000 environmental sound clips across 50 categories
 
-## Data Source
+### Radar — Open Radar Initiative
+- **Source**: Gusland et al., "Open Radar Initiative: Large Scale Dataset for Benchmarking of micro-Doppler Recognition Algorithms", 2021 IEEE International Radar Conference
+- **URL**: https://github.com/openradarinitiative/open_radar_datasets
+- **License**: CC-BY-NC-4.0
+- **Coverage**: 350 signatures — 50 UAV + 47 bicycle + 52 person + 201 vehicle
+- **Format**: NumPy .npy with complex Doppler spectrograms (44, 1008) per signature
 
-**Zenodo 4264467** — Radio-Frequency Control and Video Signal Recordings of Drones
-- Author: Karel Pärlin (2020)
-- URL: https://zenodo.org/records/4264467
-- DOI: 10.5281/zenodo.4264467
-- License: CC-BY 4.0
-- Format: Interleaved int16 LE IQ, 4 bytes/complex sample
-- Sample rate: 120 MSps (2.4 GHz) / 200 MSps (5.8 GHz)
-- 12 drone files covering 11 distinct types (DJI, Parrot, Yuneec)
-
-See `docs/INTEGRATION_REPORT.md` for full source attribution.
-
-## Citation
+## Citations
 
 ```bibtex
 @dataset{parlin_2020_4264467,
   author       = {Pärlin, Karel},
   title        = {{Radio-Frequency Control and Video Signal Recordings of Drones}},
-  month        = nov,
-  year         = 2020,
-  publisher    = {Zenodo},
-  version      = 1,
+  month        = nov, year         = 2020,
+  publisher    = {Zenodo}, version      = 1,
   doi          = {10.5281/zenodo.4264467},
   url          = {https://doi.org/10.5281/zenodo.4264467}
 }
+
+@inproceedings{gusland2021open,
+  author       = {Gusland, Daniel and Christiansen, Jonas M and Torvik, Børge and Fioranelli, Francesco and Gurbuz, Sevgi and Ritchie, Matthew},
+  booktitle    = {2021 IEEE International Radar Conference (RADAR)},
+  title        = {{Open Radar Initiative : Large Scale Dataset for Benchmarking of micro-Doppler Recognition Algorithms}},
+  year         = 2021
+}
 ```
 
-## Next Step: RF Silent
+## Loss Function: VICReg + SIGReg + BCE
 
-The v3 encoder is the production RF modality for the IRIS multimodal fusion system. The next step is to run the RF Silent ablation:
-1. Train acoustic encoder on drone audio data
-2. Train radar encoder on drone radar data
-3. Train fusion head with modality dropout (per `extension/scripts/train_pipeline.py`)
-4. Run `python -m extension.scripts.train_pipeline --stage rf_silent`
+All three encoders use the same loss:
+
+```
+L = L_sigreg + L_vicreg + L_bce
+
+L_sigreg  = mean((var(Wz) - 1)^2)                       # variance target via random projections
+L_vicreg  = λ_var · mean(relu(1 - std(z)))               # per-dim variance penalty
+          + λ_cov · sum(off_diag(Cov(z))^2) / D          # decorrelation
+L_bce     = BCE(head(z), label)                          # drone vs BG classification
+```
+
+VICReg (Variance-Invariance-Covariance Regularization) prevents representation collapse — without it, the encoder collapses onto a 2D subspace of the 256-dim embedding space. With VICReg, effective dimension jumps from 2 to 216.

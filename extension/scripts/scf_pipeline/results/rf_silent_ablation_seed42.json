@@ -1,0 +1,47 @@
+{
+  "timestamp": "2026-08-15 16:19:26 UTC",
+  "method": "Fusion training + RF Silent ablation",
+  "seed": 42,
+  "n_epochs": 20,
+  "n_train": 160,
+  "n_eval": 40,
+  "modalities": {
+    "rf": true,
+    "acoustic": true,
+    "radar": true
+  },
+  "results": {
+    "full_fusion": {
+      "acc": 1.0,
+      "auc": 1.0
+    },
+    "rf_silent": {
+      "acc": 0.925,
+      "auc": 1.0
+    },
+    "acoustic_silent": {
+      "acc": 1.0,
+      "auc": 1.0
+    },
+    "radar_silent": {
+      "acc": 1.0,
+      "auc": 1.0
+    },
+    "rf_only": {
+      "acc": 1.0,
+      "auc": 1.0
+    },
+    "acoustic_only": {
+      "acc": 0.975,
+      "auc": 0.9949874686716791
+    },
+    "radar_only": {
+      "acc": 0.875,
+      "auc": 0.9122807017543859
+    }
+  },
+  "rf_silent_retention": {
+    "acc_ratio": 0.925,
+    "auc_ratio": 1.0
+  }
+}
