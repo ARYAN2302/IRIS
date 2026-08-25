@@ -175,8 +175,8 @@ def train_one_epoch(model, dataloader, optimizer, scheduler, device, grad_clip, 
         # Forward
         z1, z2, p1, p2, y_pred, losses = model(x1, x2)
 
-        sig_loss = losses['sig']
-        inv_loss = losses['inv']
+        sig_loss = losses['sigreg']
+        inv_loss = losses['invariance']
 
         # Negatives: SIGReg only, no invariance
         batch_loss = sig_loss + is_pos.mean() * inv_loss

@@ -12,8 +12,7 @@ This gives negatives the same 3-channel structure as drone spectrograms,
 forcing the model to learn actual RF signal patterns.
 
 Usage:
-    cd /Users/adarshthakur/Desktop/IRIS
-    python3 scripts/fix_hdf5_channel.py
+    python3 scripts/fix_hdf5_channel.py  # run from repo root
 
 Time: ~5-10 minutes for 122K samples on M1 MacBook Air
 """

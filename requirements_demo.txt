@@ -19,7 +19,7 @@ matplotlib==3.9.3
 h5py==3.12.1
 
 # Modal (for pulling checkpoint from cloud storage)
-modal==0.67.44
+modal>=1.5.0
 
 # Remote ID decoder (Build 4)
 # Installed separately when we get to that build:

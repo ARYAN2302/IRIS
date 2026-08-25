@@ -46,7 +46,7 @@
   "seed": 42,
   "min_samples": 100,
   "created_at": "2026-06-02 08:46:09",
-  "hdf5_path": "/Users/adarshthakur/Desktop/IRIS/data/processed/iris_rfuav.h5",
+  "hdf5_path": "data/processed/iris_rfuav.h5",
   "train_categories": {
     "DAUTEL EVO nano": "unknown",
     "DEVENTION DEVO": "unknown",

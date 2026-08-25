@@ -121,8 +121,8 @@ class DisentangledEncoder(nn.Module):
         from .backbone import CNNEncoder, SIGRegLoss, DroneBGHead
         self.encoder = CNNEncoder(in_ch=in_ch, embed_dim=embed_dim)
         self.sigreg = SIGRegLoss(embed_dim=embed_dim)
-        self.bg_head = DroneBGHead(d=embed_dim)
-        self.id_head = DroneIDHead(embed_dim=embed_dim, n_drone_types=n_drone_types)
+        self.bg_head = DroneBGHead(d=embed_dim // 2)
+        self.id_head = DroneIDHead(embed_dim=embed_dim // 2, n_drone_types=n_drone_types)
         self.contrastive = ConditionalContrastiveLoss(temperature=0.07)
 
     def forward(self, x):

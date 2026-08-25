@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
 """
 gen_tier2_local.py — Tier 2 visuals: Architecture diagram + Radar chart
-Run locally on your Mac (no Modal needed).
+Run locally (no Modal needed).
 
-    cd /Users/adarshthakur/Desktop/IRIS/scripts
-    python gen_tier2_local.py
+    python scripts/gen_tier2_local.py  # from repo root
 
-Output -> /Users/adarshthakur/Desktop/IRIS/iris_output/
+Output -> iris_output/
     05_architecture_diagram.png
     06_radar_chart.png
 """
@@ -19,7 +18,7 @@ from matplotlib.patches import FancyBboxPatch, FancyArrowPatch
 import numpy as np
 import os
 
-OUTPUT_DIR = '/Users/adarshthakur/Desktop/IRIS/iris_output'
+OUTPUT_DIR = os.path.join(os.path.dirname(__file__), '..', 'iris_output')
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 # ─── Dark theme ───
