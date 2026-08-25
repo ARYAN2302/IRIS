@@ -1,229 +1,245 @@
 # IRIS — Identify, Recognize, Isolate, Spot
 
-**Self-supervised drone detection + RF-only intent classification + Remote ID spoof detection + continual learning — all on RF spectrograms, all edge-deployable.**
+**Self-supervised drone detection + RF-only intent classification + Remote ID spoof detection + continual learning + multimodal RF-silent fallback — all edge-deployable.**
 
-IRIS learns a general representation of "drone-ness" from RF spectrograms using LeJEPA + SIGReg + Hierarchical Supervised Contrastive Learning. It detects drone types it has never seen during training, classifies their intent from RF alone, authenticates Remote ID broadcasts via RF fingerprinting, and learns new threats without forgetting old ones.
+IRIS learns a general representation of "drone-ness" from RF. Two complementary stacks: **v11 (LeJEPA + Hierarchical SupCon on STFT spectrograms)** and **v3 (VICReg + Mahalanobis on SCF cyclostationary features)**. The SCF path is the production detector — receiver-invariant by construction, 99.7% on unseen DJI types, 100% at SNR 0–30 dB. A late-fusion extension adds acoustic + radar with modality dropout for graceful degradation when RF is jammed/offline. An intelligence layer (tracking, threat scoring, SAPIENT-ready output, fleet coordination) turns detections into C2 decisions.
+
+[![CI](https://github.com/ARYAN2302/IRIS/actions/workflows/ci.yml/badge.svg)](https://github.com/ARYAN2302/IRIS/actions) [![License: Research](https://img.shields.io/badge/license-research-blue.svg)](#license) [![Modal](https://img.shields.io/badge/modal-%3E%3D1.5.0-black)](https://modal.com)
 
 ---
 
-## Results (Verified on T4 GPU, 3-seed confidence intervals where noted)
+## Results
 
-### 1. Zero-Shot Drone Detection
+### v11 — Zero-Shot on RF Spectrograms (30 train → 7 unseen types, T4, 3 seeds)
 
 | Metric | Value |
 |---|---|
 | **AUC (holdout vs matched BG)** | **0.978** |
 | Per-pair drone-closer rate | 98.6% |
 | Bootstrap 95% CI | [0.979, 0.984] |
-| Encoder params | 3.7M |
-| ONNX model size | ~13 MB |
-| Inference latency (M1 Mac) | ~10 ms |
+| Encoder | 3.7M params, ~13 MB ONNX, ~10 ms (M1) |
 
-**Noise robustness (Demo 0):** 0% false positive rate on real WiFi/Bluetooth/environmental RF at every SNR level from clean to -5 dB. AUC = 1.0000 from clean through +5 dB SNR.
+**Noise robustness (Demo 0):** 0% FP on real WiFi/BT/environmental RF at every SNR from clean to −5 dB. AUC 1.0 through +5 dB.
 
 | SNR | Drone TPR | Matched BG FPR | Real RF FPR | AUC |
 |---|---|---|---|---|
-| clean | 62.0% | 0.0% | 0.0% | 1.0000 |
-| +20 dB | 62.0% | 0.0% | 0.0% | 1.0000 |
-| +10 dB | 68.0% | 0.0% | 0.0% | 1.0000 |
-| +5 dB | 64.0% | 0.0% | 0.0% | 0.9960 |
-| 0 dB | 22.0% | 0.0% | 0.0% | 0.9724 |
-| -5 dB | 0.0% | 0.0% | 0.0% | 0.8364 |
+| clean | 62% | 0% | 0% | 1.0000 |
+| +10 dB | 68% | 0% | 0% | 1.0000 |
+| +5 dB | 64% | 0% | 0% | 0.9960 |
+| 0 dB | 22% | 0% | 0% | 0.9724 |
+| −5 dB | 0% | 0% | 0% | 0.8364 |
 
-### 2. RF-Only Intent Classification (First-of-Kind)
-
-No published paper does RF-only drone intent inference. SOTA is CPhy-ML (Nature 2024) which uses control physics, not RF.
+### v3 — SCF Production Detector (Zenodo → DRFF-R2, receiver-invariant, T4)
 
 | Metric | Value |
 |---|---|
-| Overall accuracy (3-class) | 66.9% |
-| Random baseline | 33% |
-| **ATTACK recall** | **93%** (69/74) |
-| SURVEILLANCE recall | 66% (88/133) |
-| TRANSIT recall | 54% (77/143) |
+| **DRFF-R2 detection (8 unseen DJI types)** | **99.7%** @ 99.9p, AUC 1.0 |
+| BG false positives | **0%** @ 99p and 99.9p |
+| SNR sweep 0–30 dB | **100%** at every level |
+| LOTO cross-val (11 Zenodo types) | 98.75% mean |
+| Effective dim | 216/256 (VICReg fixed collapse 2→216) |
 
-**Confusion matrix:**
+v3's jump over v11 came from **input × data, not loss**: SCF `|COH|` cancels receiver gain (STFT does not) + Zenodo's OFDM-family training data shares topology with DRFF-R2 DJI. See `build.md` and `extension/scripts/scf_pipeline/results/ABCD_SUMMARY.md`.
 
-| True ↓ \ Pred → | SURVEILLANCE | TRANSIT | ATTACK |
+### Multimodal Extension (SCF + Acoustic + Radar, late fusion, modality dropout p=0.3)
+
+| Configuration | Accuracy | AUC |
+|---|---|---|
+| Full fusion (RF+Ac+Rad) | 1.0000 | 1.0000 |
+| **RF-silent (Ac+Rad only)** | **0.925** | **1.0000** |
+
+> **Note:** fusion trained/evaluated on synthetically paired embeddings — see *Known Limitations* below. Acoustic (DADS, 80/180k clips) AUC 0.869 and radar (50 UAV) AUC 0.85 are data-starved; not production.
+
+### Other Capabilities
+
+**RF-only Intent (3-class, first-of-kind):** 66.9% overall (random 33%), ATTACK recall **93%** (69/74).
+
+| True \ Pred | SURVEILLANCE | TRANSIT | ATTACK |
 |---|---|---|---|
 | SURVEILLANCE | 88 | 32 | 13 |
 | TRANSIT | 24 | 77 | 42 |
 | ATTACK | 0 | 5 | 69 |
 
-### 3. Remote ID Spoof Detection (First-of-Kind)
+**Remote ID Spoof Detection (first-of-kind):** RF fingerprint vs enrolled registry — authentic 0.636 vs spoof −0.019 @ threshold 0.85.
 
-No published work uses RF fingerprinting to authenticate Remote ID broadcasts. IRIS does.
+**AVR-CL Continual Learning (3 seeds, EWC baseline):** AVR-CL **0.781 ±0.075** vs naive 0.484 / EWC 0.482 (1.6×). Verify-and-repair loop, frozen encoder + 50K fingerprint head. See `FORGETTING_CLARIFICATION.md`.
 
-| Test | Verdict | Similarity | Threshold |
-|---|---|---|---|
-| Authentic drone (enrolled) | AUTHENTIC | 0.636 | 0.85 |
-| Spoofed drone (claims friendly serial) | **SPOOFED** | -0.019 | 0.85 |
-| Unknown drone | NOT_ENROLLED | -0.019 | 0.85 |
+**Cross-Manufacturer:** non-DJI centroid → DJI AVATA2/MINI3/MINI4 PRO 1.0, MAVIC3 PRO 0.40 / FPV COMBO 0.48 (OcuSync variant gap).
 
-### 4. AVR-CL Continual Learning (3 seeds, EWC baseline)
+**Adversarial (digital FGSM):** AUC 1.0→0.995 at ε=0.2 — Mahalanobis in SIGReg space is naturally robust. *OTA universal-I/Q perturbations (Gazit et al. Dec 2025) are the stronger, not-yet-tested threat — see Limitations.*
 
-Sequential enrollment of 7 holdout drone types. Does enrolling type N forget types 1..N-1?
+---
 
-| Method | Mean Accuracy | Std | Range |
-|---|---|---|---|
-| Naive (high LR) | 0.484 | 0.079 | [0.377, 0.566] |
-| Naive (low LR) | 0.484 | 0.079 | [0.377, 0.566] |
-| EWC | 0.482 | 0.098 | [0.366, 0.606] |
-| **AVR-CL** | **0.781** | **0.075** | [0.686, 0.869] |
+## Architecture — Two Stacks, One Production Path
 
-**AVR-CL is 1.6x better than both naive and EWC.** EWC barely beats naive — the Fisher penalty slows forgetting but doesn't prevent it. Only AVR-CL's verify-and-repair loop works. Consistent across 3 seeds.
+```
+STFT path (v11, research):  IQ → STFT (log-mag + grad) → CNNEncoder(768-d, 5 blocks, AdaPool)
+                                      → LeJEPA projector/predictor + SIGReg(Cramér-Wold, K=256, λ=1e-3)
+                                      → Hierarchical SupCon (0.7 fine same-type + 0.3 coarse all-drones)
+                                      → L2-Mahalanobis OOD
 
-### 5. Cross-Manufacturer Generalization
+SCF path (v3, production):  IQ → SCF |COH| (cyclostationary, receiver-invariant) → CNNEncoder(256-d, 6 blocks, MaxPool)
+                                      → VICReg(var+cov) + SIGReg(var) + BCE
+                                      → L2-Mahalanobis OOD  [frozen, 99.7%]
 
-Fit Mahalanobis centroid on 26 non-DJI drone types only. Test zero-shot on 5 DJI types.
+Extension (multimodal):     RF-SCF + Acoustic(mel) + Radar(range-Doppler) encoders (backbone.py:22)
+                                      → Late Fusion(768→256) + ModalityDropout(p=0.3)
+                                      → AVR-CL on fusion head (encoders frozen)
+                            Intelligence: MultiTrack(embedding+Hungarian), Bearing(Doppler v_radial),
+                                         ThreatScorer(policy-gated), SAPIENT-ready Detection protobuf
+                            Fleet: cross-site embedding correlation + weight-delta (FedAvg next)
+```
 
-| DJI Type | AUC | Verdict |
-|---|---|---|
-| DJI AVATA2 | 1.0000 | ✅ Perfect |
-| DJI MINI3 | 1.0000 | ✅ Perfect |
-| DJI MINI4 PRO | 1.0000 | ✅ Perfect |
-| DJI MAVIC3 PRO | 0.4026 | ❌ Failed |
-| DJI FPV COMBO | 0.4849 | ❌ Failed |
+Canonical encoder for new code: `extension/src/encoders/backbone.py:22`. Copies in `src/encoder.py` and `src/iris_inference.py:64` are checkpoint-bound (do not consolidate).
 
-3 of 5 DJI types detected perfectly from non-DJI centroid. 2 fail — likely different OcuSync protocol variants. IRIS partially learned "drone-ness," not just "DJI-ness."
+---
 
-### 6. Adversarial Robustness
+## Repository Structure
 
-FGSM attack on RF spectrograms (Ben-Gurion Jan 2026 showed RF detectors are vulnerable):
-
-| ε | AUC After Attack | AUC Drop |
-|---|---|---|
-| 0.01 | 1.0000 | 0.0000 |
-| 0.05 | 0.9999 | 0.0001 |
-| 0.1 | 0.9988 | 0.0012 |
-| 0.2 | 0.9950 | 0.0050 |
-
-IRIS is essentially immune to FGSM at ε=0.1. Mahalanobis distance in SIGReg-regularized space is naturally robust.
+```
+src/                          # v11 stack (LeJEPA, SIGReg, Mahalanobis, inference)
+extension/
+  src/encoders/backbone.py    # canonical CNNEncoder + SIGRegLoss + DroneBGHead
+  src/fusion.py               # late fusion + ModalityDropout
+  src/intelligence/           # drone_id, multi_track, bearing, threat_scoring
+  src/sapient/output_schema.py# SAPIENT-ready Detection messages
+  src/fleet/coordination.py   # cross-site correlation + weight-delta sharing
+  scripts/scf_pipeline/       # Zenodo SCF generation + v3 VICReg training + evals
+  scripts/experiments/        # next-phase: DADS audit, WiFi-hole, DIAT-μSAT
+configs/split.json            # 30/7 train/holdout split (now portable)
+tests/test_contracts.py       # 10 contract tests (loss keys, dims, Mahalanobis, determinism)
+results/                      # committed MD reports + JSONs (PNGs on Modal volumes)
+scripts/                      # demos, Modal launchers, T4 pipeline
+```
 
 ---
 
 ## Quick Start
 
 ```bash
-# Install dependencies
 pip install -r requirements_demo.txt
-
-# Pull trained checkpoint from Modal
-python scripts/pull_from_modal.py
-
-# Run the unified demo (shows all capabilities)
-python scripts/unified_demo.py
-```
-
-### Live Detection Demo
-
-```bash
-# Synthetic mode (no files needed)
-python scripts/live_demo.py
-
-# Replay HDF5 holdout spectrograms
-python scripts/live_demo.py --mode hdf5
-
-# Playback I/Q file
-python scripts/live_demo.py --mode iq_file --file path/to/recording.cf32
-```
-
-### Spoof Detection Demo
-
-```bash
-python scripts/spoof_demo.py --synthetic
+python scripts/pull_from_modal.py          # checkpoint from Modal volume
+python scripts/unified_demo.py             # all capabilities
+python scripts/live_demo.py                # synthetic / HDF5 / IQ file modes
+python scripts/spoof_demo.py --synthetic   # Remote ID spoof demo
 ```
 
 ---
 
-## Reproducing The Results
+## Reproducing Results
 
-All experiments run on Modal T4 GPU (~$0.40/hr). Total cost to reproduce everything: ~$0.85.
+All on Modal T4 (~$0.40/hr). Total ~$0.85 to reproduce v11.
 
 ```bash
-# 1. Noise robustness (Demo 0) — ~12 min, ~$0.10
-modal run scripts/demo0_noise_test.py
+modal run scripts/demo0_noise_test.py          # 12 min, $0.10
+modal run scripts/t4/test_pipeline_t4.py       # 30 min, $0.40
+modal run scripts/three_experiments.py         # 15 min, $0.10
+modal run scripts/avr_cl_hardened.py           # 20 min, $0.15
+modal run scripts/adversarial_test.py          # 20 min, $0.15
+```
 
-# 2. Full pipeline test (5 phases) — ~30 min, ~$0.40
-modal run scripts/t4/test_pipeline_t4.py
+SCF v3 (production) on Modal:
 
-# 3. Three experiments (DJI generalization + AVR-CL + DroneRF check) — ~15 min, ~$0.10
-modal run scripts/three_experiments.py
+```bash
+modal run extension/scripts/scf_pipeline/spawn_train_v3_vicreg.py   # VICReg fix, eff_dim 216
+modal run extension/scripts/scf_pipeline/spawn_holdout_test.py      # holdout A
+modal run extension/scripts/scf_pipeline/spawn_extended_ood_test.py # extended OOD D
+modal run extension/scripts/scf_pipeline/spawn_fusion_rfsilent.py   # fusion + RF-silent ablation
+```
 
-# 4. Hardened AVR-CL (3 seeds + EWC) — ~20 min, ~$0.15
-modal run scripts/avr_cl_hardened.py
+Next-phase experiments (staged, run after `modal token new`):
 
-# 5. Adversarial robustness (FGSM/PGD/DRFM) — ~20 min, ~$0.15
-modal run scripts/adversarial_test.py
+```bash
+modal run --detach extension/scripts/experiments/verify_p0_fixes.py   # P0 contracts on T4
+modal run --detach extension/scripts/experiments/audit_dads_loader.py # DADS 80→180k audit
+modal run --detach extension/scripts/experiments/wifi_hole_stress.py  # urban WiFi/LTE FP
+modal run --detach extension/scripts/experiments/upgrade_radar_diat.py# DIAT-μSAT 50→4,849
 ```
 
 ---
 
 ## Datasets
 
-| Dataset | Role | Drone Types | Public |
-|---------|------|-------------|--------|
-| **RFUAV** (kitofrank/RFUAV on HuggingFace) | Primary train/test | 37 types (32 non-DJI, 5 DJI) | Yes (Apache-2.0) |
-| **DroneRF** (Mendeley) | Real RF negatives | WiFi/BT/environmental | Yes |
-| **DRFF-R2** (SciDB) | Per-transmitter fingerprinting | 26 DJI units / 8 models | Yes (CC-BY 4.0) |
+| Dataset | Role | Scale | License | Access |
+|---|---|---|---|---|
+| **RFUAV** (Shi et al. arXiv:2503.09033) | v11 train/test | 37 types, 1.3 TB raw IQ @100MS/s | Apache-2.0 | HF `kitofrank/RFUAV` |
+| **Zenodo 4264467** (Pärlin, Tampere) | v3 train (SCF source) | 10 models, 120/200 MSps, anechoic | CC-BY 4.0 | zenodo.org/records/4264467 |
+| **DRFF-R2** (SciDB) | v3 OOD eval | 26 units / 8 DJI models | CC-BY 4.0 | SciDB |
+| **DroneRF** (Mendeley) | Negatives | WiFi/BT/environmental | — | Mendeley |
+| **DADS** (HF `geronimobasso/drone-audio-detection-samples`) | Acoustic | 180k clips (163K drone) | MIT | HF |
+| **DIAT-μSAT** (IEEE DataPort 10.21227/1x2q-8v62) | Radar upgrade | 4,849 X-band CW images, 6 classes | Academic | DataPort |
+| **TSMS-Drone** (figshare 10.25452/figshare.plus.30027313) | Real fusion benchmark | Time-aligned RF+CW+FMCW | CC-BY 4.0 | figshare |
 
-Train/holdout split: 30 drone types for training, 7 completely unseen types for zero-shot evaluation. See `configs/split.json`.
+Split: `configs/split.json` (30 train / 7 holdout, matched BG, negative_count 122k). Seed 42.
 
 ---
 
 ## Evaluation Protocol
 
-### Honest evaluation (Shulman 2026)
+**Honest (Shulman arXiv:2607.01025):** recording-grouped CV — a recording's segments never split train/test. Segment-level CV inflates 15–30%.
 
-Drone RF benchmarks commonly inflate accuracy by 30+ points via segment-level cross-validation. IRIS uses **recording-grouped CV** — a recording's segments are never split across train/test.
+**L2-Mahalanobis (Mahalanobis++ 2025):** L2-normalize embeddings before `fit_mahalanobis()` / `compute_mahalanobis()` — critical for cross-dataset transfer. Implemented in `src/iris_inference.py:113,141`.
 
-### L2-normalized Mahalanobis (Mahalanobis++ 2025)
+---
 
-Embeddings are L2-normalized before Mahalanobis distance computation. Significantly improves OOD detection, especially for cross-dataset transfer.
+## Known Limitations & Roadmap
+
+We ship the limitations with the numbers — that's what makes the repo hirable.
+
+| Gap | Status | Fix |
+|---|---|---|
+| **Fusion 92.5% is synthetically paired** — will not survive shuffle test | P1 | Re-evaluate on **TSMS-Drone** real aligned captures + shuffle/OR/AND baselines |
+| **WiFi-hole:** SCF ridge is `CP = drone-ness` but Wi-Fi/LTE are also CP-OFDM — margin BG 0.972 vs drone 1.018 is thin | P0 | Run `wifi_hole_stress.py` on dense urban WiFi/LTE; reframe as *protocol-topology* (spacing + TDMA cadence) |
+| **Acoustic 80/180k, radar 50 samples** — data-starved, not arch-limited | P0 | `audit_dads_loader.py` (expect 180k) + DIAT-μSAT 4,849 |
+| **FHSS/analog FM blind:** ELRS/Crossfire GFSK hops, 5.8GHz FM video have no CP ridge | P1 | Dual-head RF: frozen SCF expert + raw-IQ masked-pretrained wild head on RFUAV FHSS + new FM captures |
+| **Fiber/dark drones (0 W RF)** | P1 | Only rotor physics survives — radar micro-Doppler (20ms dwell) + acoustic BPF, not RF |
+| **Tracking:** `multi_track.py` frequency ±5MHz fragments FHSS → false swarm | P0 | Embedding cosine + Hungarian (frequency as prior) |
+| **Bearing:** `bearing.py` fake azimuth 0°/180° | P0 | Keep Doppler `v_radial`, real azimuth only via KrakenSDR/MUSIC or multi-node TDOA |
+| **Adversarial:** FGSM digital only; OTA universal I/Q (Gazit et al. Dec 2025) untested | P1 | Retarget `adversarial/boundary_probe.py` to Mahalanobis distance + PGD; add CUAP harness |
+| **SAPIENT:** JSON shaped like SAPIENT, not BSI Flex 335 Protobuf | P1 | Validate against `dstl/SAPIENT-Proto-Files`, UUID node_id, Registration(detectionDefinition) |
+| **Architecture:** 34 CNNEncoder copies, 7 fit_mahalanobis | Hygiene | Canonical `backbone.py:22` for new code; inference copies frozen for checkpoint compat |
+
+**Frozen for this proto:** `v3 CNN+VICReg+BCE+Mahalanobis on SCF` for RF detection. No world model — SCF is quasi-stationary; at most a JEPA-lite adjacent-frame predictor (+10% compute) is justified. Full world model is 5–20× cost for marginal detection gain.
 
 ---
 
 ## Why AVR-CL Works For Identification But Not Detection
 
-See `FORGETTING_CLARIFICATION.md` for the full explanation. Short version:
+See `FORGETTING_CLARIFICATION.md`. Short version:
 
-- **Encoder (detection):** Frozen, self-supervised, zero-shot. No fine-tuning → nothing to forget. IRIS detects new drone types zero-shot.
-- **Fingerprint head (identification):** Fine-tuned per enrollment. Small (50K params), task-specific. Forgetting happens here. AVR-CL prevents it.
-
-Two different layers, two different problems. This is the honest, defensible position.
+- **Encoder (detection):** frozen, zero-shot. No fine-tuning → nothing to forget.
+- **Fingerprint head (identification):** 50K params, fine-tuned per enrollment. Forgetting happens here. AVR-CL prevents it (0.781 vs 0.484 naive / 0.482 EWC).
 
 ---
 
 ## Theoretical Foundation
 
-IRIS is built on LeJEPA (Klindt, LeCun, Balestriero 2026) — "Linearly Identified JEPA." RF hardware fingerprints (CFO, oscillator phase noise, amplifier nonlinearities, thermal noise) are Gaussian-distributed per DSP physics, satisfying LeJEPA's core assumption (Theorem 1).
+LeJEPA (Klindt, LeCun, Balestriero 2026) — linear identifiability for Gaussian latents via SIGReg (Cramér-Wold, K=256, `exp(-t²/2)`). RF hardware fingerprints (CFO, phase noise, amp nonlinearities, thermal noise) satisfy Gaussian assumption per DSP physics. VICReg's whitening is what makes Mahalanobis OOD work far-OOD (2.25σ). SCF `|COH|` is the physics-informed prior that makes OOD generalization possible at the input, before any loss.
 
-SIGReg uses the Cramér-Wold theorem to force the embedding distribution toward N(0, I) via K=256 random 1D projections, making Theorem 3's identifiability bound apply.
-
-See `build.md` for the full theoretical justification.
+See `build.md` for full derivation and `extension/scripts/scf_pipeline/results/ABCD_SUMMARY.md` for the ab study (v1 98.5% → v3 99.7%, eff_dim 2→216, 15k-sample regression lesson).
 
 ---
 
 ## References
 
 - Klindt, LeCun, Balestriero. "Linearly Identified JEPA." 2026.
-- Zheng et al. "Use All The Labels: A Hierarchical Multi-Label Contrastive Learning Framework." CVPR 2022.
+- Bardes et al. "VICReg." arXiv:2105.04906, ICLR 2022.
+- Zheng et al. "Use All The Labels." CVPR 2022.
 - Shulman. "How Much Do RF Drone Benchmarks Overstate?" arXiv:2607.01025, 2026.
-- Mahalanobis++ (L2-normalization for OOD detection). 2025.
-- Lee et al. "A Simple Unified Framework for Detecting Out-of-Distribution Samples and Adversarial Attacks." NeurIPS 2018.
-- Shi et al. "RFUAV: A Benchmark Dataset for UAV Detection and Identification." arXiv:2503.09033, 2025.
-- DARPA RFMLS (Radio Frequency Machine Learning Systems) — validates SEI use case
-- DARPA BLADE (Behavioral Learning for Adaptive Electronic Warfare) — validates cognitive EW use case
+- Lee et al. "A Simple Unified Framework for Detecting OOD Samples." NeurIPS 2018.
+- Shi et al. "RFUAV." arXiv:2503.09033, 2025.
+- Gazit et al. "Real-World Adversarial Attacks on RF-Based Drone Detectors." arXiv:2512.20712, Dec 2025.
+- Mototolea et al. "Non-Cooperative FHSS-GFSK Detection." OJComS 2020.
+- BSI Flex 335 v2.0 (SAPIENT) — Dstl/MoD, Mar 2024.
 
 ---
 
 ## License
 
-This project is for research and demonstration purposes. See dataset licenses (RFUAV: Apache-2.0, DRFF-R2: CC-BY 4.0) for data usage terms.
+Research and demonstration purposes. See dataset licenses (RFUAV Apache-2.0, DRFF-R2 CC-BY 4.0, Zenodo CC-BY 4.0) for data terms.
 
 ## Citation
 
-If you use IRIS in your research, cite:
 ```bibtex
 @software{iris_2026,
   title={IRIS: Self-supervised drone detection via LeJEPA on RF spectrograms},
