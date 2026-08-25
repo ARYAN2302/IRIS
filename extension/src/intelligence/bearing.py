@@ -84,18 +84,14 @@ class BearingEstimator:
         else:
             confidence = 0.3
 
-        # 5. Estimate azimuth from Doppler + strength pattern
-        # This is very crude for single-antenna — just approach/depart
-        if approach_rate > 0:
-            azimuth_hint = 0.0  # approaching from front
-        else:
-            azimuth_hint = 180.0  # departing
-
+        # Azimuth: NOT estimable from single antenna — Doppler gives radial
+        # velocity only, not direction. Return None until KrakenSDR/MUSIC
+        # or multi-node TDOA is available. Claiming 0°/180° would be fake physics.
         return BearingEstimate(
-            azimuth=azimuth_hint,
+            azimuth=None,  # requires coherent multi-channel (KrakenSDR) or TDOA
             approach_rate=float(approach_rate),
             confidence=float(confidence),
-            method='single_antenna'
+            method='single_antenna_doppler_only'
         )
 
     def estimate_from_signal_strength(self, rssi_over_time: np.ndarray,

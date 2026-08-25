@@ -78,12 +78,15 @@ class MultiTrackManager:
         if len(active_tracks) >= 5:
             print("SWARM DETECTED")
     """
-    def __init__(self, track_timeout=5.0, swarm_threshold=5):
+    def __init__(self, track_timeout=5.0, swarm_threshold=5,
+                 embedding_threshold: float = 0.85, use_embedding_matching: bool = True):
         self.tracks: Dict[int, DroneTrack] = {}
         self.next_track_id = 0
         self.track_timeout = track_timeout  # seconds
         self.swarm_threshold = swarm_threshold
-        self.frequency_tolerance = 5e6  # 5 MHz tolerance for track matching
+        self.frequency_tolerance = 5e6  # 5 MHz — used as Bayesian prior, not sole criterion
+        self.embedding_threshold = embedding_threshold  # cosine similarity for re-ID
+        self.use_embedding_matching = use_embedding_matching  # embedding is primary, freq is prior
 
     def update(self, frequency: float, rssi: float, timestamp: float,
                embedding: Optional[np.ndarray] = None,
@@ -104,12 +107,39 @@ class MultiTrackManager:
 
         Returns: the updated or created DroneTrack
         """
-        # Find matching track (same frequency band)
+        # Find matching track — embedding is primary (handles FHSS hops),
+        # frequency is a Bayesian prior (same channel = bonus, not requirement).
         matching_track = None
+        best_score = -1.0
+        now = timestamp
+
         for track in self.tracks.values():
-            if abs(track.frequency - frequency) < self.frequency_tolerance:
+            if (now - track.last_detected) > self.track_timeout:
+                continue  # stale — don't match
+
+            # Embedding cosine similarity (primary)
+            emb_score = 0.0
+            if self.use_embedding_matching and embedding is not None and track.embedding is not None:
+                a = embedding / (np.linalg.norm(embedding) + 1e-8)
+                b = track.embedding / (np.linalg.norm(track.embedding) + 1e-8)
+                emb_score = float(np.dot(a, b))
+
+            # Frequency proximity bonus (0–0.3)
+            freq_bonus = max(0.0, 1.0 - abs(track.frequency - frequency) / self.frequency_tolerance) * 0.3
+
+            # Combined score — embedding dominates; freq bonus only breaks ties
+            combined = emb_score + freq_bonus if emb_score > 0 else freq_bonus
+
+            # Gate: need either strong embedding match OR close frequency with no embedding yet
+            gate_pass = (emb_score >= self.embedding_threshold) or \
+                        (track.embedding is None and abs(track.frequency - frequency) < self.frequency_tolerance)
+
+            if gate_pass and combined > best_score:
+                best_score = combined
                 matching_track = track
-                break
+
+        # Fallback for first detection of a new drone (no embedding yet): frequency-only gate above already handles it.
+        # FHSS hops from same drone will now re-associate via embedding (>0.85) even when frequency jumps >5MHz.
 
         if matching_track is None:
             # Create new track
@@ -154,12 +184,21 @@ class MultiTrackManager:
                 if (current_time - t.last_detected) < self.track_timeout]
 
     def is_swarm(self) -> bool:
-        """Check if the number of active tracks indicates a swarm."""
-        return len(self.get_active_tracks()) >= self.swarm_threshold
+        """Swarm = ≥5 *distinct* drones with stable tracks.
+
+        Requires each track to have ≥3 detections and ≥2s duration to avoid
+        FHSS hop fragments being counted as separate drones (single FHSS drone
+        visiting many channels would otherwise false-trigger swarm).
+        """
+        stable = [t for t in self.get_active_tracks()
+                  if t.detection_count >= 3 and t.duration >= 2.0]
+        return len(stable) >= self.swarm_threshold
 
     def get_swarm_count(self) -> int:
-        """Get the number of active tracks (for swarm detection)."""
-        return len(self.get_active_tracks())
+        """Stable active tracks (FHSS-robust)."""
+        stable = [t for t in self.get_active_tracks()
+                  if t.detection_count >= 3 and t.duration >= 2.0]
+        return len(stable)
 
     def cleanup_stale_tracks(self):
         """Remove tracks that haven't been seen recently."""

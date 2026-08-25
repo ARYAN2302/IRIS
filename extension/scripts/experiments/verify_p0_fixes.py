@@ -19,11 +19,9 @@ IMAGE = modal.Image.debian_slim().pip_install(
 
 @app.function(image=IMAGE, gpu="T4", timeout=600)
 def verify():
-    import torch, numpy as np, json, sys
-    sys.path.insert(0, "/")
-    # Mount repo via modal mount? Instead copy needed files via inline imports
-    # We will pip install the repo? Simpler: just test the logic directly
-    # Import from the mounted repo — modal run mounts local files automatically
+    import torch, numpy as np, json, sys, os
+    sys.path.insert(0, os.getcwd())
+    sys.path.insert(0, ".")
     results = {}
 
     # 1. LeJEPALoss keys
@@ -101,17 +99,17 @@ def verify():
         results["mahalanobis"] = f"FAIL: {e}"
         import traceback; traceback.print_exc()
 
-    # 5. Hardcoded paths
+    # 5. Hardcoded paths (exclude this test file which contains the string literally)
     try:
         import pathlib, re
         banned = re.compile(r"/Users/|/home/adarshthakur")
         offenders=[]
         for p in pathlib.Path(".").rglob("*.py"):
             if ".git" in str(p) or "__pycache__" in str(p): continue
+            if p.name == "verify_p0_fixes.py": continue
             if banned.search(p.read_text(errors="ignore")):
                 offenders.append(str(p))
         assert not offenders, f"hardcoded paths in {offenders}"
-        import json as js
         assert "/Users/" not in pathlib.Path("configs/split.json").read_text()
         results["portability"] = "PASS"
     except Exception as e:
