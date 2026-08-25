@@ -302,7 +302,7 @@ def download_esc50(max_clips=400):
     return clips
 
 
-def main(seed=42, n_epochs=20, n_dads_shards=1, max_dads_per_shard=500, max_esc50=300):
+def main(seed=42, n_epochs=30, n_dads_shards=39, max_dads_per_shard=5000, max_esc50=2000):
     device = "cuda"
     torch.manual_seed(seed); np.random.seed(seed); random.seed(seed); torch.cuda.manual_seed_all(seed)
 
