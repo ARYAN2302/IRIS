@@ -16,7 +16,7 @@ VOL = modal.Volume.from_name("iris-cuas-data", create_if_missing=True)
 IMAGE = (
     modal.Image.debian_slim()
     .pip_install("datasets==2.20.0", "huggingface_hub==0.24.0", "librosa==0.10.0",
-                 "soundfile==0.12.0", "numpy==1.26.4", "torch==2.5.1",
+                 "soundfile>=0.12.1", "numpy==1.26.4", "torch==2.5.1",
                  "scikit-learn==1.6.1", "scipy==1.14.1")
     .env({"HF_HUB_OFFLINE": "0"})
 )
