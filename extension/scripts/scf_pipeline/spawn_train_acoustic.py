@@ -180,24 +180,84 @@ def mahal_l2(embs, centroid, cov_inv):
 
 
 def download_dads_shards(n_shards_to_download=1):
-    from huggingface_hub import hf_hub_download
+    """Try hf_hub_download with streaming fallback if HF Hub stalls."""
+    import time
     print(f"  Downloading {n_shards_to_download} DADS shards from HuggingFace...", flush=True)
     shards = []
     for i in range(n_shards_to_download):
         shard_path = f"data/train-{i:05d}-of-00039.parquet"
-        local = hf_hub_download(
-            repo_id="geronimobasso/drone-audio-detection-samples",
-            filename=shard_path, repo_type="dataset", local_dir="/tmp/dads",
-        )
-        shards.append(local)
-        print(f"    [{i+1}/{n_shards_to_download}] {shard_path} -> {os.path.getsize(local)/1e6:.0f} MB", flush=True)
+        local = None
+        # Try hf_hub_download with retries
+        for attempt in range(3):
+            try:
+                from huggingface_hub import hf_hub_download
+                import signal
+                def timeout_handler(signum, frame):
+                    raise TimeoutError("hf_hub_download hung")
+                signal.signal(signal.SIGALRM, timeout_handler)
+                signal.alarm(120)  # 2 min per shard
+                local = hf_hub_download(
+                    repo_id="geronimobasso/drone-audio-detection-samples",
+                    filename=shard_path, repo_type="dataset", local_dir="/tmp/dads",
+                    resume_download=True,
+                )
+                signal.alarm(0)
+                break
+            except TimeoutError as e:
+                print(f"    Shard {i} attempt {attempt+1} timeout, retrying...", flush=True)
+                time.sleep(5)
+            except Exception as e:
+                print(f"    Shard {i} attempt {attempt+1} failed: {e}", flush=True)
+                time.sleep(5)
+        if local and os.path.exists(local):
+            shards.append(local)
+            print(f"    [{i+1}/{n_shards_to_download}] {shard_path} -> {os.path.getsize(local)/1e6:.0f} MB", flush=True)
+        else:
+            print(f"    [{i+1}/{n_shards_to_download}] {shard_path} FAILED after 3 attempts, will use streaming fallback", flush=True)
+    # If hf_hub_download failed for all, fall back to datasets streaming for remaining
+    if len(shards) < n_shards_to_download:
+        print(f"  Falling back to datasets streaming for {n_shards_to_download - len(shards)} shards...", flush=True)
+        try:
+            from datasets import load_dataset
+            stream = load_dataset("geronimobasso/drone-audio-detection-samples", split="train", streaming=True)
+            # Collect needed samples via streaming (no parquet download)
+            fallback_needed = (n_shards_to_download - len(shards)) * 300
+            tmp_audio = []
+            for idx, row in enumerate(stream):
+                if len(tmp_audio) >= fallback_needed:
+                    break
+                audio_entry = row.get("audio")
+                label = row.get("label", 1)
+                if isinstance(audio_entry, dict) and "bytes" in audio_entry:
+                    tmp_audio.append((audio_entry["bytes"], int(label) if label is not None else 1))
+                elif isinstance(audio_entry, dict) and "array" in audio_entry:
+                    # Some versions store as array + sampling_rate
+                    import io, soundfile as sf
+                    arr = np.array(audio_entry["array"], dtype=np.float32)
+                    sr = audio_entry.get("sampling_rate", 16000)
+                    buf = io.BytesIO()
+                    sf.write(buf, arr, sr, format="WAV")
+                    tmp_audio.append((buf.getvalue(), int(label) if label is not None else 1))
+            print(f"    Streaming fallback collected {len(tmp_audio)} clips", flush=True)
+            # Save fallback to a temp list that extract will handle as already-extracted
+            # We stash it globally for extract to pick up
+            global _streaming_fallback
+            _streaming_fallback = tmp_audio
+        except Exception as e:
+            print(f"    Streaming fallback failed: {e}", flush=True)
     return shards
 
+_streaming_fallback = []
 
 def extract_dads_audio(shards, max_per_shard=300):
     import pyarrow.parquet as pq
     print(f"  Extracting audio from {len(shards)} shards...", flush=True)
     all_audio = []
+    # Include streaming fallback if present
+    global _streaming_fallback
+    if _streaming_fallback:
+        all_audio.extend(_streaming_fallback)
+        print(f"    Streaming fallback: {len(_streaming_fallback)} clips pre-loaded", flush=True)
     for shard_path in shards:
         try:
             f = pq.ParquetFile(shard_path)
@@ -242,7 +302,7 @@ def download_esc50(max_clips=400):
     return clips
 
 
-def main(seed=42, n_epochs=30, n_dads_shards=5, max_dads_per_shard=1000, max_esc50=400):
+def main(seed=42, n_epochs=20, n_dads_shards=1, max_dads_per_shard=500, max_esc50=300):
     device = "cuda"
     torch.manual_seed(seed); np.random.seed(seed); random.seed(seed); torch.cuda.manual_seed_all(seed)
 
