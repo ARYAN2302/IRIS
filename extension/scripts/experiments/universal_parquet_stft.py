@@ -252,8 +252,69 @@ def train(seed=42, n_epochs=25):
         else:
             auc_open = -1
         print(f"\nClosed-set acc (seen 80%): {acc_seen:.4f}")
-        print(f"Open-set AUC (seen vs 5 holdout): {auc_open:.4f}")
-        print(f"Same 3.7M arch, STFT JPEG, MixStyle — proves ONE arch universal without SCF/STFT choice")
+        print(f"Open-set AUC (seen vs 5 RFUAV holdout): {auc_open:.4f}")
+        # Cross-dataset DRFF-R2 holdout (never seen, different receiver/dataset) — the true universal test
+        auc_drff = -1
+        try:
+            import h5py, glob as _glob
+            drff_path = None
+            for cand in ["/data/data/drffr2.h5", "/data2/data/drffr2.h5", "/data/drffr2.h5"]:
+                if os.path.exists(cand):
+                    drff_path = cand; break
+            if drff_path is None:
+                cands = _glob.glob("/data/**/drffr2.h5", recursive=True) + _glob.glob("/data2/**/drffr2.h5", recursive=True)
+                if cands:
+                    drff_path = cands[0]
+            if drff_path and os.path.exists(drff_path):
+                print(f"\n[DRFF cross-dataset] Loading {drff_path}...", flush=True)
+                with h5py.File(drff_path, "r") as f:
+                    def list_keys(g, prefix=""):
+                        keys = []
+                        for k in g.keys():
+                            try:
+                                item = g[k]
+                                if hasattr(item, "keys"):
+                                    keys.extend(list_keys(item, prefix+f"{k}/"))
+                                else:
+                                    keys.append(prefix+k)
+                            except: keys.append(prefix+k)
+                        return keys
+                    keys = list_keys(f)
+                    print(f"  DRFF keys sample: {keys[:10]}", flush=True)
+                    drff_images = None
+                    for k in keys:
+                        try:
+                            arr = f[k][:]
+                            if isinstance(arr, np.ndarray) and arr.ndim >= 3 and arr.shape[-1] >= 64:
+                                print(f"  Candidate {k} shape {arr.shape} dtype {arr.dtype}", flush=True)
+                                if arr.ndim == 3:
+                                    arr = arr[:, None, :, :]
+                                if arr.ndim == 4 and arr.shape[1] in [1,2,3]:
+                                    if arr.shape[1] == 1:
+                                        arr = np.repeat(arr, 2, axis=1)
+                                    if arr.shape[2] != 256 or arr.shape[3] != 256:
+                                        t = torch.from_numpy(arr).float()
+                                        t = torch.nn.functional.interpolate(t, size=(256,256), mode="bilinear", align_corners=False)
+                                        arr = t.numpy()
+                                    drff_images = arr[:500]
+                                    print(f"  Using DRFF {k} as holdout: {drff_images.shape}", flush=True)
+                                    break
+                        except: continue
+                    if drff_images is not None and len(drff_images) > 0:
+                        z_drff = enc(torch.from_numpy(drff_images).float().to(device)).cpu().numpy()
+                        d_drff = mahal(z_drff)
+                        y_drff_open = np.concatenate([np.zeros(len(d_eval_seen)), np.ones(len(d_drff))])
+                        scores_drff = np.concatenate([d_eval_seen, d_drff])
+                        try: auc_drff = roc_auc_score(y_drff_open, scores_drff)
+                        except: auc_drff = -1
+                        print(f"DRFF cross-dataset AUC (seen RFUAV vs DRFF): {auc_drff:.4f} — DRFF dist mean {d_drff.mean():.2f} vs seen eval {d_eval_seen.mean():.2f}", flush=True)
+                    else:
+                        print("  No suitable DRFF image dataset found for STFT eval", flush=True)
+            else:
+                print("DRFF h5 not found on volume — skip cross-dataset", flush=True)
+        except Exception as e:
+            print(f"DRFF cross-dataset failed: {e}", flush=True)
+        print(f"Same 3.7M arch, STFT JPEG, MixStyle — ONE arch, no SCF/STFT choice at inference")
 
     result = {
         "timestamp": time.strftime("%Y-%m-%d %H:%M:%S UTC", time.gmtime()),
@@ -267,6 +328,7 @@ def train(seed=42, n_epochs=25):
         "eval_holdout": int(X_eval_hold.shape[0]),
         "closed_acc": float(acc_seen) if 'acc_seen' in locals() else -1,
         "open_auc": float(auc_open) if 'auc_open' in locals() else -1,
+        "open_auc_drff": float(auc_drff) if 'auc_drff' in locals() else -1,
         "arch": "CNNEncoder 3.7M 256-d STFT JPEG + MixStyle — same as SCF 99.7% and acoustic 0.999",
     }
     with open("/results/universal_parquet_result.json","w") as f:
