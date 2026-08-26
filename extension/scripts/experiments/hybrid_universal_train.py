@@ -69,19 +69,26 @@ def scf_image(iq, n_fft=1<<14, out_size=256):
     return t
 
 # ---------- Envelope comb image (from validated Proof 1a/1b chain) ----------
-def env_image(iq, decim=400, n_win=64, fs_in=1e6):
-    """Time-resolved envelope comb: rows=subwindows, cols=alpha bins."""
+def env_image(iq, decim=100, n_win_max=48):
+    """Time-resolved envelope comb: rows=subwindows, cols=alpha bins.
+    Adaptive decim/subwindows so ANY capture length works."""
     from scipy.signal import butter, filtfilt
+    decim = int(np.clip(decim, 1, max(1, len(iq)//512)))   # keep >=512 env pts
     n=len(iq)//decim*decim
     p=(np.abs(iq[:n].reshape(-1,decim))**2).mean(1)
     b,a=butter(4,0.8,btype="low"); e=filtfilt(b,a,p)
-    W=len(e)//n_win; e=e[:W*n_win]
+    n_win=int(np.clip(len(e)//24, 4, n_win_max))
+    W=len(e)//n_win
+    if W < 8: raise ValueError(f"envelope too short: len(e)={len(e)}")
+    e=e[:W*n_win]
     rows=[]
     for w in range(n_win):
         seg=e[w*W:(w+1)*W]; seg=seg-seg.mean()
         nfft=1<<int(np.ceil(np.log2(max(2*len(seg),4))))
         E=np.fft.rfft(seg,nfft); acf=np.fft.irfft(E*np.conj(E))[:len(seg)]
-        segA=acf[1:len(seg)//2]
+        half=len(seg)//2
+        if half < 8: raise ValueError("acf segment too short")
+        segA=acf[1:half]
         S=np.abs(np.fft.rfft(segA*np.hanning(len(segA))))
         S=S/(acf[0]+1e-30)/max(len(segA),1)
         idx=np.linspace(0,len(S)-1,256).astype(int)
@@ -210,7 +217,9 @@ def main():
             except Exception as e: print("  skip:",e, flush=True)
     for s in range(60):
         iq=0.05*(np.random.RandomState(s).randn(16384)+1j*np.random.RandomState(s+999).randn(16384))
-        X.append(hybrid_4ch(iq)); Y.append(0); META.append(("bg","noise"))
+        try:
+            X.append(hybrid_4ch(iq)); Y.append(0); META.append(("bg","noise"))
+        except Exception as e: print("  skip:",e, flush=True)
     X=np.stack(X).astype(np.float32); Y=np.array(Y,dtype=np.float32)
     print(f"CORPUS: X{X.shape} drones={int(Y.sum())} bg={int((1-Y).sum())}", flush=True)
 
