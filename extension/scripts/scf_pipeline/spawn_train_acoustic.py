@@ -251,7 +251,7 @@ _streaming_fallback = []
 
 def extract_dads_audio(shards, max_per_shard=300):
     import pyarrow.parquet as pq
-    print(f"  Extracting audio from {len(shards)} shards...", flush=True)
+    print(f"  Extracting audio from {len(shards)} shards (all row groups)...", flush=True)
     all_audio = []
     # Include streaming fallback if present
     global _streaming_fallback
@@ -261,14 +261,20 @@ def extract_dads_audio(shards, max_per_shard=300):
     for shard_path in shards:
         try:
             f = pq.ParquetFile(shard_path)
-            n_rows = min(f.metadata.num_rows, max_per_shard)
-            tbl = f.read_row_group(0, columns=['audio', 'label'])
-            for i in range(min(n_rows, len(tbl))):
-                audio_entry = tbl['audio'][i].as_py()
-                label = tbl['label'][i].as_py() if 'label' in tbl.column_names else 1
-                if isinstance(audio_entry, dict) and 'bytes' in audio_entry:
-                    all_audio.append((audio_entry['bytes'], int(label) if label is not None else 1))
-            print(f"    {shard_path}: {n_rows} samples extracted", flush=True)
+            shard_count = 0
+            for rg in range(f.num_row_groups):
+                if shard_count >= max_per_shard:
+                    break
+                tbl = f.read_row_group(rg, columns=['audio', 'label'])
+                for i in range(len(tbl)):
+                    if shard_count >= max_per_shard:
+                        break
+                    audio_entry = tbl['audio'][i].as_py()
+                    label = tbl['label'][i].as_py() if 'label' in tbl.column_names else 1
+                    if isinstance(audio_entry, dict) and 'bytes' in audio_entry:
+                        all_audio.append((audio_entry['bytes'], int(label) if label is not None else 1))
+                        shard_count += 1
+            print(f"    {shard_path}: {shard_count}/{f.metadata.num_rows} samples extracted ({f.num_row_groups} row groups)", flush=True)
         except Exception as e:
             print(f"    Error reading {shard_path}: {e}", flush=True)
     print(f"  Total DADS audio clips: {len(all_audio)}", flush=True)
