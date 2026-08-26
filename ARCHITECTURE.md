@@ -9,7 +9,7 @@ Companion to README §4. Read top-to-bottom: it mirrors a real detection pass.
 
 ```
         ┌────────────────── SENSING ──────────────────┐
-RF IQ ─►│ SCF |COH|   Envelope C(α)                   │
+RF IQ ─►│ SCF |COH|                                   │
 Audio ─►│ Mel spectrogram                             │
 Radar ─►│ Range-Doppler                               │
         └──────────────────┬──────────────────────────┘
@@ -54,26 +54,7 @@ image = stack( log10|SCF| , |COH| ) → 2×256×256, per-channel z-norm
   open WiFi-hole question — discrimination is protocol-topology, not CP presence).
 * **Cannot cover:** FHSS (no CP ⇒ E[S^α]=0), analog FM, RF-silent drones.
 
-### 1.2 Envelope coherence C(α) — FHSS path  (validated: `results/fhss_proof1_dsp.json`)
-
-```
-e[n] = LPF(|IQ[n]|²)            # wideband power envelope, decimated
-ē[n] = e[n] − mean(e)
-R_e[m,τ] = cyclic autocorrelation over m
-C(α) = |Σ_τ R_e(α,τ)|² / ( P̄ · R_e(0) )             # regularity ÷ power
-image = time-resolved C(α) rows + envelope ACF      → 2×256×256
-```
-
-* **Why:** ELRS/Crossfire transmit fixed-rate packets on hopping carriers. The carrier
-  moves; the *cadence doesn't*. Regularity survives receiver swaps; amplitude doesn't.
-* **Measured:** comb at exact configured rates (501.3/250.3/150.2 Hz; SNR>28K);
-  ×316..÷1000 gain shifts C(α) by ~1e-16; harmonic discriminator (f0,2f0,3f0 sharp)
-  rejects CSMA-style irregular bursts (score 0.6 vs 60).
-* **Real capture:** RadioMaster BOXER ELRS → stable f0≈49.5Hz comb across windows
-  (`results/fhss_proof1b_real.json`). α-bank source: ExpressLRS `common.cpp` /
-  FHSS.cpp (500→2ms … hop-set 80ch, cycle 1.28s; Crossfire 150Hz/50ch).
-
-### 1.3 Acoustic mel & Radar range-Doppler
+### 1.2 Acoustic mel & Radar range-Doppler
 
 Standard transforms; identical image size so the backbone treats them as peers.
 Acoustic blade-pass harmonics and radar micro-Doppler are the *only* signatures that
@@ -153,7 +134,6 @@ frames → encoder scores → track update (associate/maintain/expire)
 | v11 (STFT) | RFUAV 30 types | DroneRF real BG + matched synth | recording-grouped; 7 types held out |
 | v3 (SCF) | Zenodo 10 models (SCF h5) | matched BG + fresh holdout BG | LOTO across types; DRFF-R2 fully unseen |
 | Acoustic | DADS 3,900 clips (was 80!) | ESC-50 | 80/20 clip-level |
-| Hybrid universal | Zenodo bins (OFDM) + BOXER ELRS (FHSS) | synth WiFi-bursts, irregular bursts, noise | BOXER time-split; 2 Zenodo types LOTO; all FHSS windows scored as unseen |
 
 ---
 
