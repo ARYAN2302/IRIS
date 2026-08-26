@@ -131,15 +131,17 @@ def synth_wifi_ofdm(n=16384, n_sc=64, cp_len=8, seed=0):
     while pos < n:
         burst_len = rng.randint(500, 2000)
         if pos + burst_len >= n: break
-        sym_n = burst_len // (n_sc + cp_len)
+        sym_n = max(burst_len // (n_sc + cp_len), 1)
         chunk = []
-        for _ in range(max(sym_n,1)):
+        for _ in range(sym_n):
             s = rng.randn(n_sc) + 1j*rng.randn(n_sc)
             w = np.fft.ifft(s, n=n_sc)
-            chunk.append(np.concatenate([w[-8:], w]))
-        sig = np.concatenate(chunk)[:burst_len]
-        out[pos:pos+burst_len] = 0.3 * sig / (np.abs(sig).max()+1e-9)
-        pos += burst_len + rng.randint(200, 1500)  # idle gap
+            chunk.append(np.concatenate([w[-cp_len:], w]))
+        sig = np.concatenate(chunk)
+        end = min(pos + len(sig), n)
+        seg = sig[:end-pos]
+        out[pos:end] = 0.3 * seg / (np.abs(seg).max()+1e-9)
+        pos = end + rng.randint(200, 1500)  # idle gap
     return out + 0.01*(rng.randn(n)+1j*rng.randn(n))
 
 def synth_fhss_gfsk(n=16384, n_hops=10, hop_bw=0.15, seed=0):
