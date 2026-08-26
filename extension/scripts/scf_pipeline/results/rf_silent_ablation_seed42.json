@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-08-15 16:19:26 UTC",
+  "timestamp": "2026-08-26 00:27:24 UTC",
   "method": "Fusion training + RF Silent ablation",
   "seed": 42,
   "n_epochs": 20,
@@ -32,12 +32,12 @@
       "auc": 1.0
     },
     "acoustic_only": {
-      "acc": 0.975,
-      "auc": 0.9949874686716791
+      "acc": 0.85,
+      "auc": 0.9724310776942355
     },
     "radar_only": {
       "acc": 0.875,
-      "auc": 0.9122807017543859
+      "auc": 0.9097744360902256
     }
   },
   "rf_silent_retention": {
