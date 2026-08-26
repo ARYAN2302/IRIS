@@ -73,6 +73,14 @@ def run():
     print("big extracted files:", [(os.path.basename(g), round(os.path.getsize(g)/1e6)) for g in raws][:10], flush=True)
     assert raws, "extraction produced no large files"
 
+    # persist extracted IQ to volume so hybrid training reuses without re-download
+    os.makedirs("/data/fhss_elrs", exist_ok=True)
+    for g in raws[:4]:
+        dst = f"/data/fhss_elrs/boxer_{os.path.basename(g)}"
+        if not os.path.exists(dst):
+            subprocess.run(["cp", g, dst], check=False)
+    print("persisted to /data/fhss_elrs:", os.listdir("/data/fhss_elrs"), flush=True)
+
     # ---------- 3. load IQ windows ----------
     def load_iq(path, n_bytes=32_000_000, offset_frac=0.25):
         sz = os.path.getsize(path)
@@ -115,7 +123,8 @@ def run():
             f=ah[i]; v=Cc[i]
             if any(abs(f-p)/max(p,1e-12)<0.02 for p,_ in picked): continue
             loc=(ah>=f*0.8)&(ah<=f*1.2)&(np.abs(ah-f)>f*0.01)
-            floor=float(np.median(Cc[loc]))+1e-30
+            # perfect combs zero-out inter-line bins -> median can be exactly 0
+            floor=float(np.percentile(Cc[loc],25))+1e-12
             picked.append((float(f), float(v/floor)))
             if len(picked)>=n_top: break
         return picked
