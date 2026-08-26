@@ -209,7 +209,8 @@ def main():
             seg=iq[k*16384:(k+1)*16384]
             if len(seg)<16384: break
             try: X.append(hybrid_4ch(seg)); Y.append(1); META.append(("fhss","boxer")); fh_count+=1
-            except Exception as e: print("  skip:",e, flush=True)
+            except Exception as e:
+                import traceback, sys as _s; traceback.print_exc(); _s.stdout.flush(); raise SystemExit(1)
     print(f"FHSS+ added {fh_count}", flush=True)
 
     print("[3] BG: synth wifi/ofdm-continuous/irregular/noise", flush=True)
@@ -218,12 +219,14 @@ def main():
         for s in range(60):
             iq=g(seed=100+s+gi*100)
             try: X.append(hybrid_4ch(iq)); Y.append(0); META.append(("bg",g.__name__))
-            except Exception as e: print("  skip:",e, flush=True)
+            except Exception as e:
+                import traceback, sys as _s; traceback.print_exc(); _s.stdout.flush(); raise SystemExit(1)
     for s in range(60):
         iq=0.05*(np.random.RandomState(s).randn(16384)+1j*np.random.RandomState(s+999).randn(16384))
         try:
             X.append(hybrid_4ch(iq)); Y.append(0); META.append(("bg","noise"))
-        except Exception as e: print("  skip:",e, flush=True)
+        except Exception as e:
+                import traceback, sys as _s; traceback.print_exc(); _s.stdout.flush(); raise SystemExit(1)
     X=np.stack(X).astype(np.float32); Y=np.array(Y,dtype=np.float32)
     print(f"CORPUS: X{X.shape} drones={int(Y.sum())} bg={int((1-Y).sum())}", flush=True)
 
