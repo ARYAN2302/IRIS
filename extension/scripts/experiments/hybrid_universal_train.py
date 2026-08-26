@@ -95,9 +95,10 @@ def env_image(iq, decim=100, n_win_max=48):
         rows.append(np.log10(S[idx]+1e-12))
     spec=np.stack(rows)                      # (n_win,256)
     acf_img=np.tile(np.abs(acf[:256])[None]/(acf[0]+1e-30),(256,1))
-    ch2=spec.T.astype(np.float32)            # (256 alpha-bins, n_win) -> resize later
+    ch2=spec.T.astype(np.float32)            # (256, n_win) — resize BEFORE stack
     ch3=acf_img.astype(np.float32)
-    img=np.stack([ch2,ch3])
+    ch2r=F.interpolate(torch.from_numpy(ch2)[None],size=(256,256),mode="bilinear",align_corners=False)[0].numpy()
+    img=np.stack([ch2r,ch3])
     t=F.interpolate(torch.from_numpy(img)[None],size=(256,256),mode="bilinear",align_corners=False)[0].numpy()
     for c in range(2):
         m,s=t[c].mean(),t[c].std()+1e-8; t[c]=(t[c]-m)/s
