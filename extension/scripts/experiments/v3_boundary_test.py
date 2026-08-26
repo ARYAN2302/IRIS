@@ -123,7 +123,7 @@ def synth_cp_ofdm(n=16384, n_sc=64, cp_len=16, seed=0):
     z = np.concatenate(out)[:n]
     return 0.3 * z / (np.abs(z).max() + 1e-9) + 0.01*(rng.randn(n)+1j*rng.randn(n))
 
-def synth_wifi_ofdm(n=16384, n_sc=64, seed=0):
+def synth_wifi_ofdm(n=16384, n_sc=64, cp_len=8, seed=0):
     """Bursty OFDM packets with idle gaps — WiFi-like. Should be REJECTED (BG)."""
     rng = np.random.RandomState(seed)
     out = np.zeros(n, dtype=np.complex128)
@@ -233,16 +233,25 @@ def main(seed=42):
         raise SystemExit("frozen v3 checkpoint not found on /models")
     print(f"[1] Loading {ckpts[0]}", flush=True)
     ckpt = torch.load(ckpts[0], map_location="cpu")
-    sd = ckpt.get("state_dict", ckpt.get("model", ckpt))
+    # v3 checkpoints are saved as {"encoder": state_dict} by spawn_train_v3_vicreg
+    if "encoder" in ckpt and isinstance(ckpt["encoder"], dict):
+        sd = ckpt["encoder"]
+    else:
+        sd = ckpt.get("state_dict", ckpt.get("model", ckpt))
     enc = CNNEncoder(in_ch=2, embed_dim=256)
-    # strip prefixes
     clean = {}
-    for k,v in sd.items():
-        k2 = k.replace("encoder.","",1) if k.startswith("encoder.") else k
+    for k, v in sd.items():
+        k2 = k[len("encoder."):] if k.startswith("encoder.") else k
+        if not isinstance(v, torch.Tensor):
+            continue
         clean[k2] = v
     missing, unexpected = enc.load_state_dict(clean, strict=False)
+    real_missing = [m for m in missing]
+    print(f"  matched={len(clean)} missing={len(real_missing)} unexpected={len(unexpected)}", flush=True)
+    if len(real_missing) > 0:
+        raise RuntimeError(f"CHECKPOINT LOAD FAILED — missing keys: {real_missing[:5]}... "
+                           f"(available ckpt keys: {list(sd.keys())[:5]})")
     enc.to(device).eval()
-    print(f"  loaded (missing={len(missing)}, unexpected={len(unexpected)})", flush=True)
 
     # 2. Refit centroid on REAL training SCF from volume
     print("[2] Loading real Zenodo train SCF for centroid...", flush=True)
@@ -272,7 +281,13 @@ def main(seed=42):
         idx = np.linspace(0, arr.shape[0]-1, n_fit).astype(int)
         Xfit = arr[idx]
         if Xfit.shape[1]==1: Xfit = np.repeat(Xfit,2,axis=1)
-    Zfit = encode_batched(enc, Xfit.astype(np.float32))
+    Xfit = Xfit.astype(np.float32)
+    print(f"  Xfit stats: min={Xfit.min():.3f} max={Xfit.max():.3f} mean={Xfit.mean():.4f} std={Xfit.std():.4f}", flush=True)
+    assert Xfit.std() > 1e-4, "training SCF samples are constant — wrong dataset?"
+    Zfit = encode_batched(enc, Xfit)
+    zstd = float(Zfit.std(axis=0).mean())
+    print(f"  Zfit embed std/dim: {zstd:.4f}", flush=True)
+    assert zstd > 1e-4, f"encoder outputs constant embeddings (std={zstd}) — checkpoint load broken?"
     centroid, cov_inv = fit_mahal(Zfit)
     d_fit = mahal_l2(Zfit, centroid, cov_inv)
     thr99 = float(np.percentile(d_fit, 99))
