@@ -205,15 +205,39 @@ We ship the limitations with the numbers — that's what makes the repo hirable.
 
 ## Future Research & Works
 
-**Universal drone detection** — the thesis behind this proto is *one 3.7M arch that scales with data*. What's proven: same `CNNEncoder` + `VICReg` gives RF `99.7%` (SCF) and acoustic `0.999` (mel, 80→3900 clips) — arch is general, data was the bottleneck. What's next:
+**Universal drone detection** — the thesis behind this proto is *one 3.7M arch that scales with data*. What's proven: same `CNNEncoder` + `VICReg` gives RF `99.7%` (SCF) and acoustic `0.999` (mel, 80→3900 clips) — arch is general, data was the bottleneck.
 
-1.  **Universal RF (all radios):** Train one model on mixed **FHSS (ELRS/Crossfire/FrSky) + OFDM (DJI)** from RFUAV 37 types, plus FM analog 5.8GHz rule-based scanner. No SCF/STFT choice at inference — single receiver-invariant input that handles both. Validated as `OFDM 99.7%` + `FHSS held-out` + `DRFF-R2 cross-dataset` in one protocol.
+### Future Work: FHSS coverage via the same coherence framework
 
-2.  **RF-silent at scale:** Acoustic `3900 → 180k` via HDF5 streaming (37GB → streaming, not `np.concatenate`) and radar `50 → 4,849` DIAT-μSAT X-band images — same arch, same loss, full potential.
+**The one-line pitch:** v3's architecture (CNN + VICReg + BCE + Mahalanobis) is modulation-agnostic — everything downstream of the input representation stays frozen. The only thing that changes for FHSS is *which* cyclic frequencies the coherence step searches, because the periodic structure being exploited is different, not because the detection principle is different.
 
-3.  **Real multi-sensor fusion:** Replace synthetic `0.925` pairing with **TSMS-Drone** time-aligned `RF+CW+FMCW` (figshare) — transformer early fusion, honest shuffle/OR/AND baselines, where industry is heading.
+**Stage 1 — Identify the target periodicity (replaces "cyclic prefix" with two candidate features).**
+For OFDM, α was locked to subcarrier spacing from the cyclic prefix. For FHSS/ELRS, there are two independent periodic structures to test: (a) hop/burst-timing cyclostationarity, from ELRS's regular TDMA-like packet cadence at its known fixed rates (500Hz, 250Hz, etc.) — this is the stronger, more promising candidate since it's a large, deliberate periodicity, not a subtle modulation artifact; (b) GFSK symbol-rate cyclostationarity from the underlying modulation itself, as a fallback/supplementary signal. Stage 1 output: an α-bank tuned to known ELRS/Crossfire packet rates, the same way the current pipeline is tuned to DJI's known subcarrier spacing.
 
-4.  **Intelligence at scale:** Tracking already FHSS-robust (embedding+Hungarian), bearing honest (Doppler only until KrakenSDR) — next is 3-node TDOA pilot positioning and SAPIENT `BSI Flex 335` Protobuf certification for fleet.
+**Stage 2 — Build the receiver-invariant feature (replaces STFT/|COH| with an FHSS-domain equivalent).**
+Same logic as before: raw burst amplitude will still carry receiver-specific AGC/gain, so a direct magnitude feature would reintroduce the exact problem v11 had. The equivalent of |COH| here needs to normalize burst-timing/periodicity strength by local signal power, so what's measured is *how regular the bursting is*, not *how strong it looks* — regularity should transfer across receivers even if amplitude doesn't.
+
+**Stage 3 — Feed the frozen v3 backbone, unchanged.**
+CNN encoder, VICReg (collapse prevention + whitening for Mahalanobis to stay well-conditioned), BCE for discrimination, Mahalanobis for OOD — none of this is OFDM-specific, so none of it should need to change. This is the strongest part of the "future work" story: you're not proposing a new model, you're proposing a new front-end feeding an already-validated backbone.
+
+**Stage 4 — Validate with the same rigor, not less.**
+Cross-receiver test specifically for FHSS (this is the one currently missing entirely — nothing today tells you whether FHSS detection would even survive a receiver swap). LOTO (leave-one-target-out), per-SNR ROC curves, multi-seed with collapse monitoring, same as v3's evidence hygiene. Given literature shows FHSS cyclostationary detection degrading sharply below roughly -2dB to -8dB SNR, per-SNR reporting matters even more here than it did for OFDM — expect and report a narrower usable SNR window honestly, don't average it away.
+
+**Stage 5 — New data requirement, stated plainly.**
+Needs real ELRS/Crossfire IQ captures with known ground-truth packet rate and dwell time — this data likely doesn't exist yet in your current corpus (RFUAV, Zenodo 4264467) the way OFDM data does. This is the actual bottleneck, more than any architecture question — worth naming explicitly as the first blocking task, not a detail to gloss over.
+
+**Known risks to state upfront, not discover live:**
+- Weaker, noisier cyclic feature than OFDM's cyclic prefix — expect a narrower reliable-detection SNR range, by design, not by bug.
+- "Regular bursting ≠ ELRS specifically" — same discriminability problem as "CP ≠ drone," needs matching to known ELRS/Crossfire rates specifically, not just "periodic bursting detected."
+- Possibly needs longer observation windows than OFDM's ~20ms dwell, since hop-period periodicity by definition needs to span multiple hops to be measurable.
+
+> *"FHSS is not a new detector — it's the same coherence-based invariance principle, retargeted at ELRS's packet periodicity instead of OFDM's cyclic prefix, inheriting the validated backbone and requiring new data and honest SNR-bounded validation, not new architecture."*
+
+### Other roadmap items
+
+1.  **RF-silent at scale:** Acoustic `3900 → 180k` via HDF5 streaming and radar `50 → 4,849` DIAT-μSAT X-band images — same arch, same loss, full potential.
+2.  **Real multi-sensor fusion:** Replace synthetic `0.925` pairing with **TSMS-Drone** time-aligned `RF+CW+FMCW` (figshare) — transformer early fusion, honest shuffle/OR/AND baselines, where industry is heading.
+3.  **Intelligence at scale:** Tracking already FHSS-robust (embedding+Hungarian), bearing honest (Doppler only until KrakenSDR) — next is 3-node TDOA pilot positioning and SAPIENT `BSI Flex 335` Protobuf certification for fleet.
 
 ---
 
