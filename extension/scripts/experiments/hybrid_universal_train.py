@@ -17,8 +17,8 @@ Run: python3 extension/scripts/experiments/hybrid_universal_train.py  (spawns de
 import modal
 
 app = modal.App("iris-hybrid-universal")
-DATA_VOL = modal.Volume.from_name("iris-cuas-data")
-DATA_VOL2 = modal.Volume.from_name("iris-data")
+DATA_VOL = modal.Volume.from_name("iris-data")        # holds fhss_elrs/
+DATA_VOL2 = modal.Volume.from_name("iris-cuas-data") # holds raw_iq bins
 MODELS_VOL = modal.Volume.from_name("iris-cuas-models")
 RESULTS_VOL = modal.Volume.from_name("iris-cuas-results")
 IMAGE = (
@@ -171,6 +171,7 @@ def main():
     X=[];Y=[];META=[]  # META: ('ofdm',type) ('fhss','boxer') ('bg',kind)
     print("[1] OFDM positives: Zenodo bins", flush=True)
     bins=sorted(glob.glob("/data2/raw_iq/*.bin"))
+    assert bins, f"no Zenodo bins: {os.listdir('/data2')}"
     for bi,path in enumerate(bins):
         dtype=np.float32; raw=np.fromfile(path,dtype=dtype,count=8_000_000)
         iq=(raw[0::2]+1j*raw[1::2])
@@ -193,7 +194,9 @@ def main():
     print(f"OFDM+ done: {sum(1 for m in META if m[0]=='ofdm')} windows / {n_ofdm_types} types", flush=True)
 
     print("[2] FHSS positives: BOXER ELRS", flush=True)
-    fhs=sorted(glob.glob("/data/fhss_elrs/boxer_*")) or glob.glob("/data/fhss_elrs/*")
+    os.makedirs("/data/fhss_elrs", exist_ok=True)
+    fhs=sorted(glob.glob("/data/fhss_elrs/boxer_*"))
+    assert fhs, f"no BOXER iq: {os.listdir('/data/fhss_elrs')}"
     fh_count=0
     for path in [p for p in fhs if not p.endswith('.rar')]:
         sz=os.path.getsize(path)
