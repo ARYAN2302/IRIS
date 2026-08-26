@@ -339,6 +339,10 @@ def train(seed=42, n_epochs=25):
     print("Saved /models/universal_rf_stft.pt and /results/universal_parquet_result.json")
     return result
 
-@app.local_entrypoint()
-def main():
-    train.remote()
+if __name__ == "__main__":
+    # Proper detached: spawns and disconnects, does NOT stop when you exit
+    with app.run(detach=True):
+        fc = train.spawn(seed=42, n_epochs=25)
+        print(f"SPAWNED detached: {fc.object_id}")
+        print(f"App: {app.name}")
+        print("Will keep running after you disconnect. Check: modal app list / modal app logs <id>")
