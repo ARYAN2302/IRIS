@@ -106,6 +106,27 @@ def env_image(iq, decim=100, n_win_max=48):
         m,s=t[c].mean(),t[c].std()+1e-8; t[c]=(t[c]-m)/s
     return t
 
+
+def robust_iq(path, max_bytes=64_000_000):
+    """Read interleaved IQ auto-detecting float32 vs int16; return sanitized complex."""
+    sz=os.path.getsize(path)
+    with open(path,'rb') as f:
+        f.seek(min(sz//4, max(0,sz-max_bytes)))
+        buf=f.read(max_bytes)
+    a32=np.frombuffer(buf[:len(buf)//4*4],dtype='<f4')
+    ok32=np.isfinite(a32).all() and len(a32)>0 and np.abs(a32).max()<1e9
+    if ok32:
+        a=a32.astype(np.float64)
+    else:
+        a=np.frombuffer(buf[:len(buf)//2*2],dtype='<i2').astype(np.float64)/32768.0
+    if len(a)%2: a=a[:-1]
+    iq=a[0::2]+1j*a[1::2]
+    m=np.isfinite(iq.real)&np.isfinite(iq.imag)
+    iq=iq[m]
+    std=float(np.abs(iq).std())
+    assert std>1e-10, f"constant/empty iq {path}"
+    return iq/std
+
 def hybrid_4ch(iq):
     a=scf_image(iq); b=env_image(iq)
     img=np.concatenate([a,b],axis=0)
@@ -173,17 +194,14 @@ def main():
     bins=sorted(glob.glob("/data2/raw_iq/*.bin"))
     assert bins, f"no Zenodo bins: {os.listdir('/data2')}"
     for bi,path in enumerate(bins):
-        dtype=np.float32; raw=np.fromfile(path,dtype=dtype,count=8_000_000)
-        iq=(raw[0::2]+1j*raw[1::2])
-        std=iq.std()
-        if std<1e-7: continue
-        iq=iq/std
+        try: iq=robust_iq(path)
+        except Exception as e: print(f"  bad file {path}: {e}", flush=True); continue
         w=len(iq)//16384
         tname=os.path.basename(path).replace(".bin","")
         take=min(w//3+1, 12)   # ~12 windows/file
         for k in range(take):
             seg=iq[k*16384:(k+1)*16384]
-            if len(seg)<16384: break
+            if len(seg)<16384 or not np.isfinite(seg.real).all(): break
             try: X.append(hybrid_4ch(seg)); Y.append(1); META.append(("ofdm",tname))
             except Exception as e:
                 import traceback; traceback.print_exc()
@@ -199,20 +217,12 @@ def main():
     assert fhs, f"no BOXER iq: {os.listdir('/data/fhss_elrs')}"
     fh_count=0
     for path in [p for p in fhs if not p.endswith('.rar')]:
-        sz=os.path.getsize(path)
-        raw=np.fromfile(path,dtype=np.float32,count=16_000_000)
-        if len(raw)<1000:
-            continue
-        iq=raw[0::2]+1j*raw[1::2]
-        # normalize RFUAV int-interleave scale heuristics: try /32768 if huge
-        if np.abs(iq).std()>1e3: iq=iq/32768.0
-        std=iq.std();
-        if std<1e-9: continue
-        iq=iq/std
+        try: iq=robust_iq(path)
+        except Exception as e: print(f"  bad file {path}: {e}", flush=True); continue
         w=len(iq)//16384
         for k in range(min(w,40)):
             seg=iq[k*16384:(k+1)*16384]
-            if len(seg)<16384: break
+            if len(seg)<16384 or not np.isfinite(seg.real).all(): break
             try: X.append(hybrid_4ch(seg)); Y.append(1); META.append(("fhss","boxer")); fh_count+=1
             except Exception as e:
                 import traceback, sys as _s; traceback.print_exc(); _s.stdout.flush(); raise SystemExit(1)
