@@ -308,7 +308,7 @@ def download_esc50(max_clips=400):
     return clips
 
 
-def main(seed=42, n_epochs=30, n_dads_shards=39, max_dads_per_shard=5000, max_esc50=2000):
+def main(seed=42, n_epochs=30, n_dads_shards=39, max_dads_per_shard=100, max_esc50=400):
     device = "cuda"
     torch.manual_seed(seed); np.random.seed(seed); random.seed(seed); torch.cuda.manual_seed_all(seed)
 
@@ -471,7 +471,7 @@ IMAGE = IMAGE.add_local_file(CORE_PATH, "/root/train_acoustic_core.py")
 @app.function(
     image=IMAGE, gpu="T4",
     volumes={"/data": DATA_VOL, "/results": RESULTS_VOL, "/models": MODELS_VOL},
-    timeout=5400, memory=16384,
+    timeout=5400, memory=32768,
 )
 def launch(seed=42, n_epochs=30):
     import sys; sys.path.insert(0, "/root")
