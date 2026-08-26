@@ -1,0 +1,156 @@
+#!/usr/bin/env python3
+"""
+Proof 1b — Real FHSS capture vs RFUAV paper-reported hop timing.
+
+Downloads one RFUAV FHSS-type raw-IQ archive (RadioMaster BOXER — paper reports
+FHSDT=6.84ms dwell, FHSPP=422.8ms sequence period), extracts, runs the validated
+envelope-coherence pipeline on real captures, and checks dominant comb candidates
+against {1/FHSDT ~146Hz transition rate, 1/FHSPP ~2.37Hz cycle}.
+
+Run: python3 extension/scripts/experiments/fhss_proof1b_real.py   (spawns detached)
+"""
+import modal
+
+app = modal.App("fhss-proof1b-real")
+DATA_VOL = modal.Volume.from_name("iris-data")
+RESULTS_VOL = modal.Volume.from_name("iris-cuas-results")
+IMAGE = (
+    modal.Image.debian_slim()
+    .apt_install("unrar-free", "p7zip-full", "wget")
+    .pip_install("numpy==1.26.4", "scipy==1.14.1", "huggingface_hub==0.24.7",
+                 "tqdm==4.67.1")
+)
+
+@app.function(image=IMAGE, volumes={"/data": DATA_VOL, "/results": RESULTS_VOL},
+              timeout=7200, memory=16384)
+def run():
+    import os, json, time, glob, subprocess
+    import numpy as np
+    from scipy.signal import butter, filtfilt
+
+    print("="*70)
+    print("=== Proof 1b: real RFUAV FHSS capture (BOXER) envelope comb ===")
+    print("="*70, flush=True)
+
+    # ---------- 1. find + download BOXER rar ----------
+    from huggingface_hub import HfApi, hf_hub_download
+    api = HfApi()
+    files = api.list_repo_files("kitofrank/RFUAV", repo_type="dataset")
+    cands = [f for f in files if f.lower().endswith((".rar",".zip")) and "boxer" in f.lower()]
+    print(f"repo has {len(files)} files; BOXER archives: {cands}", flush=True)
+    if not cands:
+        # fallback: any FHSS-controller candidate
+        for name in ["tx16s","jumper","t14"]:
+            cands = [f for f in files if name in f.lower() and f.lower().endswith((".rar",".zip"))]
+            if cands: break
+    assert cands, "no candidate archive found in repo"
+    arch = cands[0]
+    local = hf_hub_download("kitofrank/RFUAV", arch, repo_type="dataset", local_dir="/tmp/rfuav")
+    print(f"downloaded {arch} -> {os.path.getsize(local)/1e9:.2f} GB", flush=True)
+    results = {"archive": arch, "size_gb": os.path.getsize(local)/1e9}
+
+    # ---------- 2. extract ----------
+    exdir = "/tmp/extract"
+    os.makedirs(exdir, exist_ok=True)
+    for cmd in (["7z","x",local,f"-o{exdir}","-y"],
+                ["bsdtar","-xf",local,"-C",exdir],
+                ["unrar-free","x",local,exdir+"/"]):
+        try:
+            r = subprocess.run(cmd, capture_output=True, text=True, timeout=3600)
+            got = glob.glob(exdir+"/**/*", recursive=True)
+            if r.returncode==0 and any(os.path.isfile(g) and os.path.getsize(g)>1e6 for g in got):
+                print(f"extract OK via {cmd[0]}: {len(got)} entries", flush=True); break
+        except Exception as e:
+            print(f"  {cmd[0]} failed: {e}", flush=True)
+    raws = [g for g in glob.glob(exdir+"/**/*", recursive=True)
+            if os.path.isfile(g) and os.path.getsize(g) > 50e6]
+    print("big extracted files:", [(os.path.basename(g), round(os.path.getsize(g)/1e6)) for g in raws][:10], flush=True)
+    assert raws, "extraction produced no large files"
+
+    # ---------- 3. load IQ windows ----------
+    def load_iq(path, n_bytes=32_000_000, offset_frac=0.25):
+        sz = os.path.getsize(path)
+        with open(path,"rb") as f:
+            f.seek(int(sz*offset_frac))
+            buf = f.read(n_bytes)
+        for itemp in (np.float32, np.int16):
+            try:
+                a = np.frombuffer(buf[:len(buf)//(4 if itemp==np.float32 else 2)*(4 if itemp==np.float32 else 2)], dtype=itemp)
+                if itemp==np.int16: a=a.astype(np.float32)/32768.0
+                if len(a)%2: a=a[:-1]
+                iq = a[0::2] + 1j*a[1::2]
+                if np.abs(iq).std() > 1e-6:
+                    return iq
+            except Exception: continue
+        raise RuntimeError("could not parse IQ")
+
+    # ---------- 4. validated envelope pipeline (from Proof 1a) ----------
+    def power_envelope(iq, decim=100):
+        n=len(iq)//decim*decim
+        p=(np.abs(iq[:n].reshape(-1,decim))**2).mean(axis=1)
+        b,a=butter(4,0.8,btype="low"); return filtfilt(b,a,p)
+
+    def envelope_spectrum(e):
+        e=e-e.mean(); N=len(e)
+        nfft=1<<int(np.ceil(np.log2(2*N)))
+        E=np.fft.rfft(e,nfft); acf=np.fft.irfft(E*np.conj(E),nfft)[:N]
+        seg=acf[1:N//2]; S=np.abs(np.fft.rfft(seg*np.hanning(len(seg))))
+        alphas=np.fft.rfftfreq(len(seg))
+        return alphas, S/(acf[0]+1e-30)/len(seg)
+
+    def top_comb_candidates(alphas_hz, C, n_top=6, fmin=5.0, fmax=None):
+        """peak-pick with local contrast, returns sorted candidates."""
+        if fmax is None: fmax = alphas_hz.max()*0.45
+        m=(alphas_hz>=fmin)&(alphas_hz<=fmax)
+        ah,Cc = alphas_hz[m], C[m]
+        order=np.argsort(Cc)[::-1]
+        picked=[]
+        for i in order:
+            f=ah[i]; v=Cc[i]
+            if any(abs(f-p)/max(p,1e-12)<0.02 for p,_ in picked): continue
+            loc=(ah>=f*0.8)&(ah<=f*1.2)&(np.abs(ah-f)>f*0.01)
+            floor=float(np.median(Cc[loc]))+1e-30
+            picked.append((float(f), float(v/floor)))
+            if len(picked)>=n_top: break
+        return picked
+
+    # sample-rate: RFUAV metadata says USRP 100 MS/s; verify by file heuristics later
+    FS = 100e6; DECIM=4000   # env fs = 25kHz, resolves up to 12.5kHz transitions
+    all_peaks={}
+    for path in raws[:2]:
+        for off in (0.25, 0.55):
+            try:
+                iq = load_iq(path, offset_frac=off)
+            except Exception as e:
+                print(f"  load fail {path}@{off}: {e}", flush=True); continue
+            e = power_envelope(iq, decim=DECIM)
+            alphas, C = envelope_spectrum(e)
+            ah = alphas * (FS/DECIM)
+            peaks = top_comb_candidates(ah, C, n_top=6, fmin=5.0)
+            tag=f"{os.path.basename(path)}@{off}"
+            all_peaks[tag]=peaks
+            print(f"  {tag}: top combs (Hz, contrast): " +
+                  ", ".join(f"{f:.1f}({c:.0f}x)" for f,c in peaks), flush=True)
+
+    # expected from paper Table: BOXER FHSDT=6.84ms -> transitions ~146.2Hz; FHSPP=422.8ms -> cycle 2.365Hz
+    expected = {"hop_transition_hz": 1/0.00684, "sequence_cycle_hz": 1/0.4228}
+    match={}
+    for tag,peaks in all_peaks.items():
+        for lbl,exp in expected.items():
+            best=min(peaks, key=lambda pc: abs(pc[0]-exp)) if peaks else (0,0)
+            match[f"{tag}:{lbl}"]={"expected":round(exp,2),"nearest_found":round(best[0],2),
+                                   "rel_err":round(abs(best[0]-exp)/exp,3),"contrast":round(best[1],1)}
+    results["expected_from_paper"]=expected
+    results["peaks"]=all_peaks
+    results["match_analysis"]=match
+    results["timestamp"]=time.strftime("%Y-%m-%d %H:%M:%S UTC", time.gmtime())
+    with open("/results/fhss_proof1b_real.json","w") as f:
+        json.dump(results,f,indent=2)
+    print("\nExpected (RFUAV paper):", expected, flush=True)
+    print(json.dumps(match, indent=2), flush=True)
+    print("Saved /results/fhss_proof1b_real.json")
+    return "done"
+
+@app.local_entrypoint()
+def main():
+    print(run.remote())
