@@ -79,7 +79,9 @@ def run():
         dst = f"/data/fhss_elrs/boxer_{os.path.basename(g)}"
         if not os.path.exists(dst):
             subprocess.run(["cp", g, dst], check=False)
+    subprocess.run(["cp", local, "/data/fhss_elrs/_archive.rar"], check=False)
     print("persisted to /data/fhss_elrs:", os.listdir("/data/fhss_elrs"), flush=True)
+    results["best_comb_search_archive"] = {"rar": os.path.basename(local)}
 
     # ---------- 3. load IQ windows ----------
     def load_iq(path, n_bytes=32_000_000, offset_frac=0.25):
@@ -131,9 +133,29 @@ def run():
             if len(picked)>=n_top: break
         return picked
 
+    def best_comb_search(alphas_hz, C, f_lo=20.0, f_hi=600.0, n_harm=8, step=0.25):
+        """Scan candidate fundamentals; score = MIN over k=1..n_harm of
+        C(k*f0) / p75(C). A true TDMA comb maximizes the minimum (all harmonics present).
+        Returns top 3 (f0, score, harmonics_found)."""
+        out=[]
+        hi = min(f_hi, alphas_hz.max()/n_harm)
+        for f0 in np.arange(f_lo, hi, step):
+            ratios=[]
+            for k in range(1, n_harm+1):
+                fk=f0*k
+                m=(alphas_hz>=fk*0.98)&(alphas_hz<=fk*1.02)
+                if not m.any(): ratios=[0]; break
+                ratios.append(float(C[m].max()))
+            if len(ratios)<n_harm: continue
+            floor=float(np.percentile(C,75))+1e-30
+            score=min(r/floor for r in ratios)
+            out.append((float(f0), float(score), n_harm))
+        out.sort(key=lambda t:-t[1])
+        return out[:3]
+
     # sample-rate: RFUAV metadata says USRP 100 MS/s; verify by file heuristics later
     FS = 100e6; DECIM=4000   # env fs = 25kHz, resolves up to 12.5kHz transitions
-    all_peaks={}
+    all_peaks={}; comb_scores={}
     for path in raws[:2]:
         for off in (0.25, 0.55):
             try:
@@ -146,8 +168,12 @@ def run():
             peaks = top_comb_candidates(ah, C, n_top=6, fmin=5.0)
             tag=f"{os.path.basename(path)}@{off}"
             all_peaks[tag]=peaks
-            print(f"  {tag}: top combs (Hz, contrast): " +
-                  ", ".join(f"{f:.1f}({c:.0f}x)" for f,c in peaks), flush=True)
+            combs = best_comb_search(ah, C)
+            comb_scores[tag]=combs
+            print(f"  {tag}: top lines: " +
+                  ", ".join(f"{f:.1f}({c:.0f}x)" for f,c in peaks[:4]), flush=True)
+            print(f"      best comb: " +
+                  " | ".join(f"f0={f:.1f}Hz score={s:.0f}" for f,s,_ in combs), flush=True)
 
     # expected from paper Table: BOXER FHSDT=6.84ms -> transitions ~146.2Hz; FHSPP=422.8ms -> cycle 2.365Hz
     expected = {"hop_transition_hz": 1/0.00684, "sequence_cycle_hz": 1/0.4228}
@@ -159,6 +185,7 @@ def run():
                                    "rel_err":round(abs(best[0]-exp)/exp,3),"contrast":round(best[1],1)}
     results["expected_from_paper"]=expected
     results["peaks"]=all_peaks
+    results["best_comb_search"]=comb_scores
     results["match_analysis"]=match
     results["timestamp"]=time.strftime("%Y-%m-%d %H:%M:%S UTC", time.gmtime())
     with open("/results/fhss_proof1b_real.json","w") as f:
