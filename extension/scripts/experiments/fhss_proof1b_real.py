@@ -16,7 +16,10 @@ DATA_VOL = modal.Volume.from_name("iris-data")
 RESULTS_VOL = modal.Volume.from_name("iris-cuas-results")
 IMAGE = (
     modal.Image.debian_slim()
-    .apt_install("unrar-free", "p7zip-full", "wget")
+    .run_commands(
+        "echo 'deb http://deb.debian.org/debian bookworm non-free' > /etc/apt/sources.list.d/nonfree.list",
+        "apt-get update && apt-get install -y unrar p7zip-full wget || apt-get install -y unrar-free p7zip-full wget",
+    )
     .pip_install("numpy==1.26.4", "scipy==1.14.1", "huggingface_hub==0.24.7",
                  "tqdm==4.67.1")
 )
@@ -52,14 +55,17 @@ def run():
     # ---------- 2. extract ----------
     exdir = "/tmp/extract"
     os.makedirs(exdir, exist_ok=True)
-    for cmd in (["7z","x",local,f"-o{exdir}","-y"],
-                ["bsdtar","-xf",local,"-C",exdir],
-                ["unrar-free","x",local,exdir+"/"]):
+    for cmd in (["unrar","x","-o+",local,exdir+"/"],
+                ["7z","x",local,f"-o{exdir}","-y"],
+                ["bsdtar","-xf",local,"-C",exdir]):
         try:
             r = subprocess.run(cmd, capture_output=True, text=True, timeout=3600)
             got = glob.glob(exdir+"/**/*", recursive=True)
-            if r.returncode==0 and any(os.path.isfile(g) and os.path.getsize(g)>1e6 for g in got):
-                print(f"extract OK via {cmd[0]}: {len(got)} entries", flush=True); break
+            big = [g for g in got if os.path.isfile(g) and os.path.getsize(g)>1e6]
+            print(f"  {cmd[0]}: rc={r.returncode} big_files={len(big)} "
+                  f"stderr_tail={r.stderr[-200:] if r.stderr else ''}", flush=True)
+            if r.returncode==0 and big:
+                print(f"extract OK via {cmd[0]}", flush=True); break
         except Exception as e:
             print(f"  {cmd[0]} failed: {e}", flush=True)
     raws = [g for g in glob.glob(exdir+"/**/*", recursive=True)
