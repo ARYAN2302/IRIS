@@ -17,8 +17,8 @@ RESULTS_VOL = modal.Volume.from_name("iris-cuas-results")
 IMAGE = (
     modal.Image.debian_slim()
     .run_commands(
-        "echo 'deb http://deb.debian.org/debian bookworm non-free' > /etc/apt/sources.list.d/nonfree.list",
-        "apt-get update && apt-get install -y unrar p7zip-full wget || apt-get install -y unrar-free p7zip-full wget",
+        "echo 'Types: deb\nURIs: http://deb.debian.org/debian\nSuites: bookworm\nComponents: main non-free non-free-firmware\nSigned-By: /usr/share/keyrings/debian-archive-keyring.gpg' > /etc/apt/sources.list.d/nonfree.sources",
+        "apt-get update && apt-get install -y unrar p7zip-full wget",
     )
     .pip_install("numpy==1.26.4", "scipy==1.14.1", "huggingface_hub==0.24.7",
                  "tqdm==4.67.1")
