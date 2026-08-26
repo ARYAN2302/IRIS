@@ -283,25 +283,40 @@ def main():
     torch.save({"encoder":enc.state_dict(),"head":head.state_dict()},"/models/hybrid_universal_encoder.pt")
     print("SAVED /models/hybrid_universal_encoder.pt (pre-eval)", flush=True)
 
-    centroid,covinv=None,None
-    Ztr_all=enc_batch(enc,X[tr_i])
-    ytr=Y[tr_i]
-    Ztr=Ztr_all[ytr==1]                      # drone-only centroid (was mixed w/ BG)
-    print(f"Mahalanobis fit on {len(Ztr)} drone-only train embs", flush=True)
-    c=Ztr.mean(0); cov=np.cov(Ztr.T)+1e-3*np.eye(256)
-    try: ci=np.linalg.inv(cov)
-    except: ci=np.linalg.pinv(cov)
-    def mh(E): 
-        n=np.linalg.norm(E,axis=1,keepdims=True)+1e-8; e=E/n; d=e-c
-        return np.sqrt(np.maximum((d@ci*d).sum(1),0))
-    d_fit=mh(Ztr); thr=float(np.percentile(d_fit,99)); thr9=float(np.percentile(d_fit,99.9))
-    res={"threshold_99p":thr}
-    for name,idx in [("seen_ofdm",ev_seen),("holdout_ofdm_types",ev_hold_type),("fhss_boxer_heldout",ev_fhss),("bg",ev_bg)]:
-        if not idx: continue
-        d=mh(enc_batch(enc,X[idx])); det=(d<=thr).mean(); det9=(d<=thr9).mean()
-        res[name]={"det_99p":round(float(det),4),"det_99_9p":round(float(det9),4),"dist_mean":round(float(d.mean()),2)}
-        print(f"  {name}: det={det:.2%}/{det9:.2%} dist={d.mean():.1f}", flush=True)
-    if ev_bg and ev_fhss:
+    # Cosine-centroid scorer (covariance-free; valid when n_drone < embed_dim)
+    Ztr_all=enc_batch(enc,X[tr_i]); ytr=Y[tr_i]; Zd=Ztr_all[ytr==1]
+    print(f"cosine scorer fit on {len(Zd)} drone-only embs", flush=True)
+    Zn=Zd/(np.linalg.norm(Zd,axis=1,keepdims=True)+1e-8)
+    cen=Zn.mean(0); cen=cen/(np.linalg.norm(cen)+1e-8)
+    def sc(E):
+        En=E/(np.linalg.norm(E,axis=1,keepdims=True)+1e-8)
+        return En@cen
+    s_fit=sc(Zd); thr=float(np.percentile(s_fit,1)); thr9=float(np.percentile(s_fit,0.1))
+    res={"threshold_p1":round(float(thr),4)}
+    def evaluate(name,idx):
+        if not idx: return None
+        ss=sc(enc_batch(enc,X[idx]))
+        det=float((ss>=thr).mean()); det9=float((ss>=thr9).mean())
+        res[name]={"det_p1":round(det,4),"det_p01":round(det9,4),"score_mean":round(float(ss.mean()),3)}
+        print(f"  {name}: det={det:.2%}/{det9:.2%} score={res[name]['score_mean']}", flush=True)
+        return ss
+    ss_seen=evaluate("seen_ofdm",ev_seen)
+    evaluate("holdout_ofdm_types",ev_hold_type)
+    ss_f=evaluate("fhss_boxer_heldout",ev_fhss)
+    ss_b=evaluate("bg",ev_bg)
+    if ss_f is not None and ss_b is not None:
+        yy=np.r_[np.ones(len(ss_f)),np.zeros(len(ss_b))]
+        sco=np.r_[ss_f,ss_b]
+        if np.isfinite(sco).all():
+            res["auc_fhss_vs_bg"]=round(float(roc_auc_score(yy,sco)),4)
+            print(f"  AUC FHSS-vs-BG: {res['auc_fhss_vs_bg']}", flush=True)
+    if ss_seen is not None and ss_b is not None:
+        yy=np.r_[np.ones(len(ss_seen)),np.zeros(len(ss_b))]
+        sco=np.r_[ss_seen,ss_b]
+        if np.isfinite(sco).all():
+            res["auc_ofdm_vs_bg"]=round(float(roc_auc_score(yy,sco)),4)
+            print(f"  AUC OFDM-vs-BG: {res['auc_ofdm_vs_bg']}", flush=True)
+    if False:
         y=np.r_[np.zeros(len(ev_bg)),np.ones(len(ev_fhss))]
         s=np.r_[mh(enc_batch(enc,X[ev_bg])), -mh(enc_batch(enc,X[ev_fhss]))]
         if np.isfinite(s).all():
