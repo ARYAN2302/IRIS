@@ -182,7 +182,10 @@ def main():
             seg=iq[k*16384:(k+1)*16384]
             if len(seg)<16384: break
             try: X.append(hybrid_4ch(seg)); Y.append(1); META.append(("ofdm",tname))
-            except Exception as e: print("  skip:",e, flush=True)
+            except Exception as e:
+                import traceback; traceback.print_exc()
+                print(f"  seg_len={len(seg)}", flush=True)
+                raise SystemExit(1)
         print(f"  {tname}: total windows so far {len(X)}", flush=True)
     n_ofdm_types=len(set(m[1] for m in META if m[0]=='ofdm'))
     print(f"OFDM+ done: {sum(1 for m in META if m[0]=='ofdm')} windows / {n_ofdm_types} types", flush=True)
