@@ -17,7 +17,7 @@ RESULTS_VOL = modal.Volume.from_name("iris-cuas-results")
 IMAGE = (
     modal.Image.debian_slim()
     .run_commands(
-        "echo 'Types: deb\nURIs: http://deb.debian.org/debian\nSuites: bookworm\nComponents: main non-free non-free-firmware\nSigned-By: /usr/share/keyrings/debian-archive-keyring.gpg' > /etc/apt/sources.list.d/nonfree.sources",
+        r"printf 'Types: deb\nURIs: http://deb.debian.org/debian\nSuites: bookworm\nComponents: main non-free non-free-firmware\nSigned-By: /usr/share/keyrings/debian-archive-keyring.gpg\n' > /etc/apt/sources.list.d/nonfree.sources",
         "apt-get update && apt-get install -y unrar p7zip-full wget",
     )
     .pip_install("numpy==1.26.4", "scipy==1.14.1", "huggingface_hub==0.24.7",
