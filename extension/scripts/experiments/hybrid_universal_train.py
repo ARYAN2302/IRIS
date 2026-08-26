@@ -253,7 +253,8 @@ def main():
         if y==1 and m[0]=='ofdm':
             (ev_hold_type if m[1] in holdout_types else (tr_i if random.random()<0.85 else ev_seen)).append(i)
         elif y==1 and m[0]=='fhss':
-            ev_fhss.append(i)   # ALL fhss held out of training (universal test)
+            # time-split: 'pack1_0-1s' trains, 'pack1_1-2s' fully held out
+            (tr_i if m[1].endswith('0-1s') else ev_fhss).append(i)
         else:
             (tr_i if random.random()<0.85 else ev_bg).append(i)
     print(f"splits: train={len(tr_i)} ev_seen={len(ev_seen)} ev_holdtype={len(ev_hold_type)} ev_fhss={len(ev_fhss)} ev_bg={len(ev_bg)}", flush=True)
@@ -270,7 +271,10 @@ def main():
         for xb,yb in dl:
             xb,yb=xb.to(device),yb.to(device)
             z=enc(xb)
-            loss=sig(z)+vic(z)+F.binary_cross_entropy_with_logits(head(z).squeeze(-1),yb)
+            n_pos=max(float((yb==1).sum()),1.0); n_neg=max(float((yb==0).sum()),1.0)
+            pw=torch.tensor(n_neg/max(n_pos,1.0)).to(device)
+            bce=F.binary_cross_entropy_with_logits(head(z).squeeze(-1),yb,pos_weight=pw)
+            loss=bce*10 + sig(z) + 0.32*vic(z)   # keep discrimination dominant
             opt.zero_grad();loss.backward();torch.nn.utils.clip_grad_norm_(enc.parameters(),1.0);opt.step()
             tot+=loss.item()
         sch.step()
@@ -280,7 +284,11 @@ def main():
     print("SAVED /models/hybrid_universal_encoder.pt (pre-eval)", flush=True)
 
     centroid,covinv=None,None
-    Ztr=enc_batch(enc,X[tr_i]); c=Ztr.mean(0); cov=np.cov(Ztr.T)+1e-3*np.eye(256)
+    Ztr_all=enc_batch(enc,X[tr_i])
+    ytr=Y[tr_i]
+    Ztr=Ztr_all[ytr==1]                      # drone-only centroid (was mixed w/ BG)
+    print(f"Mahalanobis fit on {len(Ztr)} drone-only train embs", flush=True)
+    c=Ztr.mean(0); cov=np.cov(Ztr.T)+1e-3*np.eye(256)
     try: ci=np.linalg.inv(cov)
     except: ci=np.linalg.pinv(cov)
     def mh(E): 
@@ -296,7 +304,8 @@ def main():
     if ev_bg and ev_fhss:
         y=np.r_[np.zeros(len(ev_bg)),np.ones(len(ev_fhss))]
         s=np.r_[mh(enc_batch(enc,X[ev_bg])), -mh(enc_batch(enc,X[ev_fhss]))]
-        res["auc_fhss_vs_bg"]=round(float(roc_auc_score(y,s)),4)
+        if np.isfinite(s).all():
+            res["auc_fhss_vs_bg"]=round(float(roc_auc_score(y,s)),4)
         print(f"  AUC FHSS-vs-BG: {res['auc_fhss_vs_bg']}", flush=True)
     res["timestamp"]=time.strftime("%Y-%m-%d %H:%M:%S UTC",time.gmtime())
     json.dump(res,open("/results/hybrid_universal_result.json","w"),indent=2)
