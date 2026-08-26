@@ -220,18 +220,30 @@ def train(seed=42, n_epochs=25):
         if (epoch+1)%5==0 or epoch==0:
             print(f"  Epoch {epoch+1}/{n_epochs} loss {tot_loss/len(dl):.3f} acc {tot_acc/len(dl):.3f}", flush=True)
 
-    # Eval closed-set
+    # Save encoder immediately after training (so OOM in eval doesn't lose it)
+    torch.save({"encoder": enc.state_dict(), "head": cls_head.state_dict()}, "/models/universal_rf_stft.pt")
+    print("Saved /models/universal_rf_stft.pt (pre-eval, so OOM won't lose it)", flush=True)
+
+    # Eval closed-set — batched to avoid 20GB OOM (1306×256×256 at once)
+    def encode_batched(encoder, X, batch=64):
+        encoder.eval()
+        outs = []
+        with torch.no_grad():
+            for i in range(0, len(X), batch):
+                outs.append(encoder(torch.from_numpy(X[i:i+batch]).float().to(device)).cpu().numpy())
+        return np.concatenate(outs) if outs else np.zeros((0,256))
+
     enc.eval()
     with torch.no_grad():
-        # Eval seen
-        z_eval = enc(torch.from_numpy(X_eval_seen).float().to(device)).cpu().numpy()
+        # Eval seen — batched
+        z_eval = encode_batched(enc, X_eval_seen, batch=64)
         # Map eval labels similarly
         y_eval_mapped = np.array([label_to_idx[l] for l in y_eval_seen], dtype=np.int64)
         logits = cls_head(torch.from_numpy(z_eval).float().to(device)).cpu().numpy()
         pred = logits.argmax(1)
         acc_seen = accuracy_score(y_eval_mapped, pred)
-        # Open-set: Mahalanobis on train seen
-        z_train_np = enc(torch.from_numpy(X_train).float().to(device)).cpu().numpy()
+        # Open-set: Mahalanobis on train seen — batched
+        z_train_np = encode_batched(enc, X_train, batch=64)
         # Fit Mahalanobis on train
         # Use y_train_mapped for per-class centroids? For open-set we use global centroid of seen
         centroid = z_train_np.mean(0); cov = np.cov(z_train_np.T) + 1e-3*np.eye(256)
@@ -241,7 +253,7 @@ def train(seed=42, n_epochs=25):
             n=np.linalg.norm(embs,axis=1,keepdims=True)+1e-8; e=embs/n; diff=e-centroid/(np.linalg.norm(centroid)+1e-8)
             return np.sqrt(np.maximum((diff@cov_inv*diff).sum(1),0))
         d_eval_seen = mahal(z_eval)
-        z_hold = enc(torch.from_numpy(X_eval_hold).float().to(device)).cpu().numpy() if len(X_eval_hold)>0 else np.zeros((0,256))
+        z_hold = encode_batched(enc, X_eval_hold, batch=64) if len(X_eval_hold)>0 else np.zeros((0,256))
         d_hold = mahal(z_hold) if len(z_hold)>0 else np.array([])
         # Open-set AUC: seen (label 0) vs holdout (label 1) — holdout should be farther ( larger distance)
         if len(d_hold)>0:
@@ -301,7 +313,7 @@ def train(seed=42, n_epochs=25):
                                     break
                         except: continue
                     if drff_images is not None and len(drff_images) > 0:
-                        z_drff = enc(torch.from_numpy(drff_images).float().to(device)).cpu().numpy()
+                        z_drff = encode_batched(enc, drff_images, batch=64)
                         d_drff = mahal(z_drff)
                         y_drff_open = np.concatenate([np.zeros(len(d_eval_seen)), np.ones(len(d_drff))])
                         scores_drff = np.concatenate([d_eval_seen, d_drff])
