@@ -99,49 +99,6 @@ def test_train_consumes_correct_keys():
     batch_loss.backward()
 
 
-# ---------------------------------------------------------------------------
-# 3. DisentangledEncoder — catches the DroneBGHead(d=256) vs 128-dim bug
-# ---------------------------------------------------------------------------
-
-def test_disentangled_encoder_forward_and_loss():
-    """DisentangledEncoder: 256→ split 128/128 → both heads accept 128-d."""
-    from extension.src.intelligence.drone_id import DisentangledEncoder
-
-    model = DisentangledEncoder(in_ch=2, embed_dim=256, n_drone_types=8)
-    model.eval()
-
-    x = torch.randn(4, 2, 256, 256)
-    bg_labels = torch.tensor([1., 0., 1., 0.])
-    drone_labels = torch.tensor([3, 0, 1, 0])
-    recv_labels = torch.tensor([0, 0, 1, 1])
-
-    with torch.no_grad():
-        z, z_detect, z_drone = model(x)
-
-    assert z.shape == (4, 256)
-    assert z_detect.shape == (4, 128)
-    assert z_drone.shape == (4, 128)
-
-    # The actual bug was here — bg_head(128-d) would crash if d=256
-    model.train()
-    loss = model.compute_loss(z, z_detect, z_drone, bg_labels, drone_labels, recv_labels)
-    assert loss.dim() == 0 and torch.isfinite(loss)
-    loss.backward()
-
-
-def test_drone_bg_head_dims():
-    """DroneBGHead must match the dim it is actually called with."""
-    from extension.src.intelligence.drone_id import DisentangledEncoder
-
-    model = DisentangledEncoder(in_ch=2, embed_dim=256, n_drone_types=4)
-    # Internal check: bg_head first Linear must be 128, not 256
-    assert model.bg_head.net[0].in_features == 128, (
-        f"bg_head expects {model.bg_head.net[0].in_features}-d, should be 128"
-    )
-    assert model.id_head.net[0].in_features == 128
-
-
-# ---------------------------------------------------------------------------
 # 4. Mahalanobis round-trip + L2 contract
 # ---------------------------------------------------------------------------
 

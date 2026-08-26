@@ -106,28 +106,7 @@ each batch randomly zeros one modality so no single sensor becomes load-bearing.
 
 ---
 
-## 4. Intelligence layer  (`extension/src/intelligence/`, `sapient/`, `fleet/`)
-
-| Module | What it does | Key design decision |
-|---|---|---|
-| `multi_track.py` | groups detections into persistent tracks | embedding-cosine + Hungarian primary; frequency as prior only. Swarm alarm needs ≥3 detections AND ≥2s — a single FHSS drone hopping 20 channels can no longer fake a swarm |
-| `bearing.py` | Doppler radial velocity `v = Δf·c/2f₀` | azimuth = None until coherent array (KrakenSDR/MUSIC) or multi-node TDOA — never fake numbers |
-| `threat_scoring.py` | 0–100 composite: type/intent/trajectory/RSSI/context | actions are policy-gated text (no autonomous jamming; licensing reality) |
-| `sapient/output_schema.py` | Detection/Track JSON shaped on Dstl SAPIENT | information-level messages, not raw data; Protobuf conformance is roadmap |
-| `fleet/coordination.py` | cross-site embedding correlation + weight deltas | privacy-preserving by construction (no raw IQ leaves site) |
-
-Data flow per second of operation:
-
-```
-frames → encoder scores → track update (associate/maintain/expire)
-       → bearing update (Doppler trend)
-       → threat re-score (approach rate ↑ ⇒ score ↑)
-       → SAPIENT Detection{track_id, class, confidence, score}
-```
-
----
-
-## 5. Training corpus map (what fed which model)
+## 4. Training corpus map (what fed which model)
 
 | Model | Positives | Negatives | Split discipline |
 |---|---|---|---|
@@ -137,7 +116,7 @@ frames → encoder scores → track update (associate/maintain/expire)
 
 ---
 
-## 6. Failure modes this architecture explicitly does NOT solve
+## 5. Failure modes this architecture explicitly does NOT solve
 
 1. **RF-silent drones** — no front-end sees them; radar/acoustic layers must.
 2. **Analog FM video** — different periodicity family; needs its own α/feature study.

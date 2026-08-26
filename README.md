@@ -1,6 +1,6 @@
 # IRIS — Identify, Recognize, Isolate, Spot
 
-**Self-supervised counter-UAS sensing: passive-RF drone detection of unseen drones + RF-silent multi-sensor fallback + an intelligence layer — one small architecture, edge-deployable (~13 MB ONNX, ~10 ms).**
+**Self-supervised counter-UAS sensing: passive-RF drone detection of unseen drones, with multi-sensor RF-silent fallback — one small architecture, edge-deployable (~13 MB ONNX, ~10 ms).**
 
 IRIS answers one question from raw radio energy: *"is that a drone — even a kind we've never seen?"* — then keeps its identity over time, scores the threat, and hands a structured track to whatever comes next (C2, jammer, interceptor). It listens passively, so it needs no transmit license.
 
@@ -76,16 +76,6 @@ Radar ► Range-Dop. ┘        (modality dropout p=0.3)
 - Modality dropout trains fusion to survive any missing sensor: zeroing RF keeps **92.5%/AUC 1.0**.
 - Fusion today is trained on synthetically paired embeddings — labeled as such everywhere; TSMS-Drone (time-aligned RF+CW+FMCW) replaces it next.
 
-### The intelligence layer (detections → decisions)
-
-`extension/src/intelligence/`, `sapient/`, `fleet/`:
-
-- **MultiTrackManager** — re-identifies hopping signals by embedding similarity (Hungarian assignment): one frequency-hopping drone stays one track. Swarm alarm requires stable tracks (≥3 detections, ≥2s).
-- **BearingEstimator** — Doppler radial velocity only (`v = Δf·c/2f₀`); azimuth is `None` until a coherent array or multi-node TDOA exists. No fake numbers.
-- **ThreatScorer** — 0–100 composite (type/intent/trajectory/RSSI/context) with policy-gated actions; no autonomous jamming (licensing reality).
-- **SAPIENT-shaped output** — Detection/Track messages modeled on Dstl's SAPIENT (BSI Flex 335): send information, not raw data.
-- **Fleet** — cross-site embedding correlation ("seen at N sites") + privacy-preserving weight sharing.
-
 Full stage-by-stage map with formulas and file paths: [`ARCHITECTURE.md`](ARCHITECTURE.md).
 
 ---
@@ -127,9 +117,6 @@ src/                            # v11 research stack (LeJEPA + SIGReg(Cramér-Wo
 extension/
   src/encoders/backbone.py      # canonical 3.7M CNNEncoder + losses (use for new work)
   src/fusion.py                 # late fusion + ModalityDropout
-  src/intelligence/             # multi_track, bearing, threat_scoring, drone_id
-  src/sapient/output_schema.py  # SAPIENT-shaped messages
-  src/fleet/coordination.py     # cross-site correlation + weight deltas
   src/scf_features.py           # SCF |COH| + hybrid feature builders
   scripts/scf_pipeline/         # Zenodo SCF generation, v3 training, holdout/OOD evals
 configs/split.json              # 30/7 train-holdout split
@@ -190,7 +177,6 @@ modal run scripts/demo0_noise_test.py                                 # noise ro
 2. **Urban robustness campaign** — frozen-v3 vs dense WiFi/LTE; publish FA-per-hour operating curves.
 3. **RF-silent at scale** — DADS 180k HDF5 streaming; DIAT-μSAT radar; micro-Doppler dwell study.
 4. **Real multi-sensor fusion** — TSMS-Drone aligned benchmark replacing synthetic pairing.
-5. **Intelligence at scale** — 3-node TDOA pilot positioning; SAPIENT Protobuf certification; signed fleet updates.
 
 ## Theory snapshot
 
