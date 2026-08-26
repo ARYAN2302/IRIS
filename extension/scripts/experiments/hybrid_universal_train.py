@@ -94,7 +94,9 @@ def env_image(iq, decim=100, n_win_max=48):
         idx=np.linspace(0,len(S)-1,256).astype(int)
         rows.append(np.log10(S[idx]+1e-12))
     spec=np.stack(rows)                      # (n_win,256)
-    acf_img=np.tile(np.abs(acf[:256])[None]/(acf[0]+1e-30),(256,1))
+    acf_pad=np.zeros(256); m=min(256,len(acf))
+    acf_pad[:m]=np.abs(acf[:m])/(acf[0]+1e-30)
+    acf_img=np.tile(acf_pad[None],(256,1))
     ch2=spec.T.astype(np.float32)            # (256, n_win) — resize BEFORE stack
     ch3=acf_img.astype(np.float32)
     ch2r=F.interpolate(torch.from_numpy(ch2)[None,None],size=(256,256),mode="bilinear",align_corners=False)[0,0].numpy()
