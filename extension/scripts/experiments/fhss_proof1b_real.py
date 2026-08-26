@@ -124,6 +124,8 @@ def run():
             if any(abs(f-p)/max(p,1e-12)<0.02 for p,_ in picked): continue
             loc=(ah>=f*0.8)&(ah<=f*1.2)&(np.abs(ah-f)>f*0.01)
             # perfect combs zero-out inter-line bins -> median can be exactly 0
+            if not loc.any() or not np.isfinite(v) or v<=0:
+                continue
             floor=float(np.percentile(Cc[loc],25))+1e-12
             picked.append((float(f), float(v/floor)))
             if len(picked)>=n_top: break
